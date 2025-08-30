@@ -1,0 +1,86 @@
+import {
+  getAppointmentsModel,
+  addAppointmentModel,
+  updateAppointmentModel,
+  deleteAppointmentModel,
+  getAppointeesByCompany,
+  getAppointeesByServiceInCompany,
+  countAppointeesByCompany,
+  countAppointeesByServiceInCompany
+} from "../models/appointmentModel.js";
+
+export const getAppointments = async (req, res) => {
+  try {
+    const appointments = await getAppointmentsModel();
+    res.status(200).json({ success: true, data: appointments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch appointments" });
+  }
+};
+
+export const fetchAppointeesByCompany = async (req, res) => {
+  const { companyId } = req.params;
+  try {
+    const appointees = await getAppointeesByCompany(companyId);
+    res.status(200).json({ success: true, data: appointees });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch appointees" });
+  }
+};
+
+export const fetchAppointeesByServiceInCompany = async (req, res) => {
+  const { companyId, serviceId } = req.params;
+  try {
+    const appointees = await getAppointeesByServiceInCompany(companyId, serviceId);
+    res.status(200).json({ success: true, data: appointees });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch appointees by service" });
+  }
+};
+
+export const getAppointeeCountByCompany = async (req, res) => {
+  const { companyId } = req.params;
+  try {
+    const count = await countAppointeesByCompany(companyId);
+    res.status(200).json({ success: true, data: count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch appointee count" });
+  }
+};
+
+export const getAppointeeCountByService = async (req, res) => {
+  const { companyId } = req.params;
+  try {
+    const counts = await countAppointeesByServiceInCompany(companyId);
+    res.status(200).json({ success: true, data: counts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch appointee counts by service" });
+  }
+};
+
+export const addAppointment = async (req, res) => {
+  try {
+    await addAppointmentModel(req.body);
+    res.status(201).json({ success: true, message: "Appointment added" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to add appointment" });
+  }
+};
+
+export const updateAppointment = async (req, res) => {
+  try {
+    await updateAppointmentModel(req.params.id, req.body);
+    res.json({ success: true, message: "Appointment updated" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to update appointment" });
+  }
+};
+
+export const deleteAppointment = async (req, res) => {
+  try {
+    await deleteAppointmentModel(req.params.id);
+    res.json({ success: true, message: "Appointment deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete appointment" });
+  }
+};
