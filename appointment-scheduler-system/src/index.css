@@ -2,43 +2,40 @@
 
 @custom-variant dark (&:is(.dark *));
 
-body{
-  background-color: rgb(255, 255, 255);
-}
 :root {
   --background: #ffffff;
-  --foreground: #4b5563;
-  --card: #f9fafb;
-  --card-foreground: #4b5563;
+  --foreground: #1f2937;
+  --card: #f1f5f9;
+  --card-foreground: #1f2937;
   --popover: #ffffff;
-  --popover-foreground: #4b5563;
-  --primary: #0891b2;
+  --popover-foreground: #1f2937;
+  --primary: #1f2937;
   --primary-foreground: #ffffff;
-  --secondary: #ec4899;
+  --secondary: #8b5cf6;
   --secondary-foreground: #ffffff;
-  --muted: #f9fafb;
+  --muted: #f1f5f9;
   --muted-foreground: #6b7280;
-  --accent: #ec4899;
+  --accent: #8b5cf6;
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --destructive: #be123c;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
-  --input: #ffffff;
-  --ring: rgba(8, 145, 178, 0.5);
-  --chart-1: #fbbf24;
-  --chart-2: #34d399;
-  --chart-3: #60a5fa;
-  --chart-4: #f472b6;
-  --chart-5: #a78bfa;
-  --radius: 0.5rem;
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #4b5563;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #4b5563;
-  --sidebar-accent: #ec4899;
+  --input: #f1f5f9;
+  --ring: rgba(139, 92, 246, 0.5);
+  --chart-1: #10b981;
+  --chart-2: #ec4899;
+  --chart-3: #059669;
+  --chart-4: #f59e0b;
+  --chart-5: #3b82f6;
+  --radius: 0.75rem;
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #10b981;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: rgba(8, 145, 178, 0.5);
+  --sidebar-ring: rgba(139, 92, 246, 0.5);
 }
 
 .dark {
@@ -48,32 +45,32 @@ body{
   --card-foreground: #f1f5f9;
   --popover: #1e293b;
   --popover-foreground: #f1f5f9;
-  --primary: #0ea5e9;
+  --primary: #8b5cf6;
   --primary-foreground: #ffffff;
-  --secondary: #f472b6;
+  --secondary: #10b981;
   --secondary-foreground: #ffffff;
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
-  --accent: #f472b6;
+  --accent: #8b5cf6;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #334155;
   --input: #1e293b;
-  --ring: rgba(14, 165, 233, 0.5);
-  --chart-1: #fbbf24;
-  --chart-2: #34d399;
-  --chart-3: #60a5fa;
-  --chart-4: #f472b6;
-  --chart-5: #a78bfa;
+  --ring: rgba(139, 92, 246, 0.5);
+  --chart-1: #10b981;
+  --chart-2: #ec4899;
+  --chart-3: #059669;
+  --chart-4: #f59e0b;
+  --chart-5: #3b82f6;
   --sidebar: #1e293b;
   --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #0f172a;
-  --sidebar-primary-foreground: #f1f5f9;
-  --sidebar-accent: #f472b6;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #10b981;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #334155;
-  --sidebar-ring: rgba(14, 165, 233, 0.5);
+  --sidebar-ring: rgba(139, 92, 246, 0.5);
 }
 
 @theme inline {
@@ -144,13 +141,88 @@ body{
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  53%,
+  80%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
   }
 }
 
 .animate-slide-in-up {
-  animation: slideInUp 0.5s ease-out;
+  animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce 1s ease-in-out;
+}
+
+/* Custom hover effects and transitions */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.glass-effect {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(209, 213, 219, 0.3);
+}
+
+.dark .glass-effect {
+  background-color: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(51, 65, 85, 0.3);
 }
