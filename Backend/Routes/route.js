@@ -8,6 +8,7 @@ import { addTransaction, deleteTransaction, fetchTransactionById, fetchTransacti
 import { addCustomization, deleteCustomization, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
 import { loginAdmin } from '../Controllers/adminController.js';
 import { addUser, getUser, getUsers } from '../Controllers/userController.js';
+import { addRating, getRatings } from '../Controllers/ratingController.js';
 
 const router = express.Router();
 
@@ -75,5 +76,10 @@ router.get("/customizations", getCustomizations);
 router.post("/customizations", addCustomization);
 router.put("/customizations/:id", updateCustomization);
 router.delete("/customizations/:id", deleteCustomization);
+
+// Rating
+router.post("/ratings", addRating);
+router.get("/ratings", getRatings);
+
 
 export default router;

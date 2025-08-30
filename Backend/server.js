@@ -4,7 +4,7 @@ import mySqlConnection from './Config/db.js';
 import router from './Routes/route.js';
 import bcrypt from 'bcrypt';
 // import adminRouter from './routes/adminRoute.js';
-// import cors from 'cors';
+import cors from 'cors';
 // import cookieParser from 'cookie-parser';
 
 dotenv.config();
@@ -12,7 +12,11 @@ dotenv.config();
 const port = process.env.PORT || 5000;
 
 const app = express();
-// app.use(cookieParser());
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
 // CORS configuration
 // app.use(cors({

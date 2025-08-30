@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DesktopSidebar from './components/DesktopSidebar';
+import Dashboard from './pages/company/Dashboard';
+import CompanyLayout from './pages/company/CompanyLayout';
 
 function App() {
   // console.log(UserProvider);
@@ -7,7 +9,7 @@ function App() {
     // <UserProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<DesktopSidebar />} />
+          <Route path="/" element={<CompanyLayout />} />
           {/* <Route path="/admin" element={<Admin />} /> */}
         </Routes>
       </Router>
