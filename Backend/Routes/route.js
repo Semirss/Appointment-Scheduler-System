@@ -1,11 +1,11 @@
 import express from 'express';
 import { addCompany, deleteCompany, getCompanies, loginCompany, updateCompany } from '../Controllers/companiesController.js';
 import { addService, deleteService, getCompanyServices, getServices, updateService, updateServiceByCompany } from '../Controllers/servicesController.js';
-import { addAppointment, deleteAppointment, fetchAppointeesByCompany, fetchAppointeesByServiceInCompany, getAppointeeCountByCompany, getAppointeeCountByService, getAppointments, updateAppointment } from '../Controllers/appointmentController.js';
+import { addAppointment, createAppointment, deleteAppointment, fetchAppointeesByCompany, fetchAppointeesByServiceInCompany, getAppointeeCountByCompany, getAppointeeCountByService, getAppointments, updateAppointment } from '../Controllers/appointmentController.js';
 import { addAddress, deleteAddress, getAddresses, getCompanyAddresses, updateAddress } from '../Controllers/addressController.js';
 import { addSchedule, deleteSchedule, fetchCompanySchedule, getSchedules, updateSchedule } from '../Controllers/scheduleController.js';
 import { addTransaction, deleteTransaction, fetchTransactionById, fetchTransactionsByCompany, getTransactions, updateTransaction } from '../Controllers/transactionsController.js';
-import { addCustomization, deleteCustomization, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
+import { addCustomization, deleteCustomization, getCustomizationByCompanyId, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
 import { loginAdmin } from '../Controllers/adminController.js';
 import { addUser, getUser, getUsers } from '../Controllers/userController.js';
 import { addRating, getRatings } from '../Controllers/ratingController.js';
@@ -45,6 +45,7 @@ router.get("/appointments/appointees/:companyId", fetchAppointeesByCompany);
 router.get("/appointments/appointees/:companyId/:serviceId", fetchAppointeesByServiceInCompany);
 router.get("/appointments/countByCompany/:companyId", getAppointeeCountByCompany);
 router.get("/appointments/countByService/:companyId", getAppointeeCountByService);
+router.post("/appointments/createAppointment", createAppointment);
 router.post("/appointments", addAppointment);
 router.put("/appointments/:id", updateAppointment);
 router.delete("/appointments/:id", deleteAppointment);
@@ -73,8 +74,9 @@ router.delete("/transactions/:id", deleteTransaction);
 
 // Customize
 router.get("/customizations", getCustomizations);
+router.get('/customizations/:companyId', getCustomizationByCompanyId);
 router.post("/customizations", addCustomization);
-router.put("/customizations/:id", updateCustomization);
+router.put("/customizations/:companyId", updateCustomization);
 router.delete("/customizations/:id", deleteCustomization);
 
 // Rating

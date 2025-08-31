@@ -1,5 +1,7 @@
+// Controllers/customizeController.js
 import {
   getCustomizationsModel,
+  getCustomizationByCompanyIdModel,
   addCustomizationModel,
   updateCustomizationModel,
   deleteCustomizationModel
@@ -14,6 +16,16 @@ export const getCustomizations = async (req, res) => {
   }
 };
 
+export const getCustomizationByCompanyId = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const customization = await getCustomizationByCompanyIdModel(companyId);
+    res.status(200).json({ success: true, data: customization });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch customization" });
+  }
+};
+
 export const addCustomization = async (req, res) => {
   try {
     await addCustomizationModel(req.body);
@@ -25,7 +37,8 @@ export const addCustomization = async (req, res) => {
 
 export const updateCustomization = async (req, res) => {
   try {
-    await updateCustomizationModel(req.params.id, req.body);
+    const { companyId } = req.params;
+    await updateCustomizationModel(companyId, req.body);
     res.json({ success: true, message: "Customization updated" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to update customization" });

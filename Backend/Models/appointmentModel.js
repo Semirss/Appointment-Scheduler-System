@@ -17,7 +17,7 @@ const getAppointeesByCompany = async (companyId) => {
     FROM users u
     JOIN appointments a ON u.user_id = a.client_id
     JOIN company_services cs ON a.service_id = cs.service_id
-    JOIN company_addresses ca ON a.company_id = ca.company_id
+    JOIN company_addresses ca ON a.address_id = ca.address_id
     WHERE a.company_id = ?
     ORDER BY a.start_time DESC
   `;

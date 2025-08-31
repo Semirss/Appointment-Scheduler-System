@@ -1,9 +1,24 @@
 import React from 'react';
 import { FaBell, FaSearch } from 'react-icons/fa';
+import { useCustomization } from '../context/CustomizationContext';
 
-const Header = ({ isCollapsed }) => {
+const Header = ({ isCollapsed, customization }) => {
+    const { customization: custom } = useCustomization();
+  
+    const headerStyle = {
+        backgroundColor: custom.header_bg,
+        color: custom.header_text,
+        borderColor: custom.theme_button
+    };
+
+    const buttonStyle = {
+        color: custom.theme_button,
+        // backgroundColor: custom.theme_button
+    };
   return (
-    <header className={`fixed top-0 right-0 flex justify-between items-center p-[0.66rem] bg-white border-b border-gray-200 shadow-sm z-40 transition-all duration-300 ${isCollapsed ? 'left-20' : 'left-64'}`}>
+    <header 
+    style={headerStyle}
+    className={`fixed top-0 right-0 flex justify-between items-center p-[0.66rem] bg-white border-b border-gray-200 shadow-sm z-40 transition-all duration-300 ${isCollapsed ? 'left-20' : 'left-64'}`}>
       {/* Search Bar */}
       <div className="relative flex-1 max-w-2xl ml-4">
         <div className="relative">
@@ -20,7 +35,7 @@ const Header = ({ isCollapsed }) => {
       <div className="flex items-center ml-6 mr-4">
         <div className="relative">
           <button className="relative p-3 rounded-full hover:bg-gray-100 transition-colors duration-200">
-            <FaBell className="h-6 w-6 text-gray-600" />
+            <FaBell style={buttonStyle} className="h-6 w-6 text-gray-600" />
             <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-xs text-white items-center justify-center font-medium">3</span>
@@ -33,3 +48,5 @@ const Header = ({ isCollapsed }) => {
 };
 
 export default Header;
+
+

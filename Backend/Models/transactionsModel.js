@@ -18,12 +18,12 @@ const getTransactionsByCompany = async (companyId) => {
       a.end_time,
       a.status,
       u.user_id,
-      u.name,
+      u.name AS user_name,
       u.email,
       cs.service_id,
-      cs.name,
+      cs.name AS service_name,
       c.company_id,
-      c.name
+      c.name AS company_name
     FROM appointment_transactions t
     JOIN appointments a ON t.appointment_id = a.appointment_id
     JOIN users u ON a.client_id = u.user_id
