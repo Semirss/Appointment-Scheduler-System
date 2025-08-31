@@ -16,14 +16,15 @@ const getUserByIdModel = async (id) => {
 
 const addUserModel = async (data) => {
   const sql = `
-    INSERT INTO users (name, email, phone, telegram_id)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO users (name, email, phone, telegram_id, address)
+    VALUES (?, ?, ?, ?, ?)
   `;
   await mySqlConnection.query(sql, [
     data.name,
     data.email,
     data.phone,
-    data.telegram_id
+    data.telegram_id,
+    data.address
   ]);
 };
 
