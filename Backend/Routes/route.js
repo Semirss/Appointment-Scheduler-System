@@ -6,7 +6,7 @@ import { addAddress, deleteAddress, getAddresses, getCompanyAddresses, updateAdd
 import { addSchedule, deleteSchedule, fetchCompanySchedule, getSchedules, updateSchedule } from '../Controllers/scheduleController.js';
 import { addTransaction, deleteTransaction, fetchTransactionById, fetchTransactionsByCompany, getTransactions, updateTransaction } from '../Controllers/transactionsController.js';
 import { addCustomization, deleteCustomization, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
-import { loginAdmin } from '../Controllers/adminController.js';
+import { loginAdmin, addAdmin } from '../Controllers/adminController.js';
 import { addUser, getUser, getUsers } from '../Controllers/userController.js';
 import { addRating, getRatings } from '../Controllers/ratingController.js';
 
@@ -14,6 +14,7 @@ const router = express.Router();
 
 // Admin login
 router.post("/adminLogin", loginAdmin);
+router.post("/adminRegister", addAdmin);
 
 // router.get("/companies", verifyAdminToken, getCompanies);
 // router.post("/companies", verifyAdminToken, addCompany);
