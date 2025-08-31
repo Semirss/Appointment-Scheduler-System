@@ -6,12 +6,19 @@ import bcrypt from 'bcrypt';
 // import adminRouter from './routes/adminRoute.js';
 // import cors from 'cors';
 // import cookieParser from 'cookie-parser';
-
+import cors from 'cors'; 
 dotenv.config();
 
 const port = process.env.PORT || 5000;
 
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:5173', // Your React app's URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // app.use(cookieParser());
 
 // CORS configuration

@@ -428,20 +428,28 @@ const ModernDashboardView = () => {
   )
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 const ModernAddCompanyForm = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     category: "",
-    address: "",
-    website: "",
-    description: "",
-    logo: null,
-    status: "Active",
+    password: "",
   })
   const [successMessage, setSuccessMessage] = useState("")
-  const [logoPreview, setLogoPreview] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
 
@@ -454,25 +462,6 @@ const ModernAddCompanyForm = () => {
     }
   }
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setErrors({ ...errors, logo: "File size must be less than 10MB" })
-        return
-      }
-
-      setFormData({ ...formData, logo: file })
-      setErrors({ ...errors, logo: "" })
-
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
   const validateForm = () => {
     const newErrors = {}
 
@@ -480,6 +469,7 @@ const ModernAddCompanyForm = () => {
     if (!formData.email.trim()) newErrors.email = "Email is required"
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
+    if (!formData.password) newErrors.password = "Password is required"
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -487,41 +477,134 @@ const ModernAddCompanyForm = () => {
       newErrors.email = "Please enter a valid email address"
     }
 
+    // Password validation
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters"
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (!validateForm()) return
+  if (!validateForm()) return
 
-    setIsSubmitting(true)
+  setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+  try {
+    // Log the data being sent for debugging
+    console.log("Submitting company data:", formData);
+    
+    const response = await fetch("http://localhost:5000/api/companies", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
 
-    console.log("Form submitted:", formData)
-    setSuccessMessage("Company added successfully!")
+    console.log("Response status:", response.status);
+    console.log("Response ok:", response.ok);
+    
+    // Check if this is a CORS preflight issue
+    if (response.status === 0) {
+      // This typically indicates a CORS error
+      throw new Error("CORS error: Request was blocked. Check server CORS configuration.");
+    }
+    
+    // Get the response text first to see what's actually coming back
+    const responseText = await response.text();
+    console.log("Raw response text:", responseText);
+    
+    // Try to parse as JSON if it's not empty
+    let result = null;
+    if (responseText && responseText.trim() !== '') {
+      try {
+        result = JSON.parse(responseText);
+        console.log("Parsed JSON response:", result);
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", parseError);
+        throw new Error(`Server returned non-JSON response: ${responseText}`);
+      }
+    } else {
+      console.log("Empty response received");
+      // Handle empty response - check if it's a success
+      if (response.ok) {
+        setSuccessMessage("Company added successfully!")
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          category: "",
+          password: "",
+        })
+        return;
+      } else {
+        throw new Error(`Server returned empty response with status: ${response.status}`);
+      }
+    }
+    
+    if (!response.ok) {
+      // Try to get error message from server response or use default
+      const errorMsg = result?.message || `Server error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMsg)
+    }
+
+    // If we get here, the request was successful with JSON response
+    setSuccessMessage(result.message || "Company added successfully!")
     setFormData({
       name: "",
       email: "",
       phone: "",
       category: "",
-      address: "",
-      website: "",
-      description: "",
-      logo: null,
-      status: "Active",
+      password: "",
     })
-    setLogoPreview(null)
+    
+  } catch (error) {
+    console.error("Error adding company:", error)
+    
+    // More specific error messages
+    let errorMessage = error.message;
+    if (error.message.includes("Failed to fetch")) {
+      errorMessage = "Cannot connect to server. Please make sure the backend is running on port 5000.";
+    } else if (error.message.includes("CORS")) {
+      errorMessage = "CORS error: The request was blocked. Please check your browser console for CORS errors and ensure your backend has proper CORS configuration.";
+    } else if (error.message.includes("Network error")) {
+      errorMessage = "Network error. Please check your connection.";
+    }
+    
+    setErrors({ submit: errorMessage })
+  } finally {
     setIsSubmitting(false)
-
+    
     setTimeout(() => {
       setSuccessMessage("")
+      setErrors({})
     }, 5000)
   }
+}
 
+// Update the test connection function to test the actual API endpoint
+const testServerConnection = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/companies", {
+      method: "OPTIONS", // Test with OPTIONS to check CORS
+    });
+    console.log("OPTIONS test response status:", response.status);
+    
+    if (response.status === 204 || response.status === 200) {
+      console.log("CORS preflight is working!");
+      setErrors({ submit: "CORS preflight is working! You can now submit the form." });
+    } else {
+      setErrors({ submit: `CORS preflight test failed with status: ${response.status}` });
+    }
+  } catch (error) {
+    console.error("CORS test failed:", error);
+    setErrors({ submit: "CORS preflight failed. Please check your backend CORS configuration." });
+  }
+}
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-card rounded-2xl border border-border overflow-hidden hover-lift">
@@ -534,10 +617,43 @@ const ModernAddCompanyForm = () => {
           </div>
         )}
 
+        {errors.submit && (
+          <div className="bg-destructive/10 border-l-4 border-destructive p-4 m-6 rounded-lg animate-slide-in-up">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-destructive mr-3" />
+              <p className="text-destructive font-medium">{errors.submit}</p>
+            </div>
+            <div className="mt-3">
+              <button
+                onClick={testServerConnection}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+              >
+                Test Server Connection
+              </button>
+            </div>
+            <p className="text-sm text-destructive mt-2">
+              Expected JSON structure:
+              <br />
+              <code className="text-xs bg-muted p-1 rounded">
+                {"{"}
+                "name": "Company Name", 
+                "email": "email@example.com",
+                "phone": "123-456-7890", 
+                "category": "Category",
+                "password": "password123"
+                {"}"}
+              </code>
+            </p>
+          </div>
+        )}
+
         <div className="p-8">
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-foreground mb-2">Add New Company</h3>
             <p className="text-muted-foreground">Fill in the details below to register a new company in the system.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              API Endpoint: /api/companies
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -643,115 +759,29 @@ const ModernAddCompanyForm = () => {
                     </p>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Additional Details */}
-            <div className="space-y-6">
-              <h4 className="text-lg font-semibold text-foreground border-b border-border pb-2">Additional Details</h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="website" className="block text-sm font-medium text-foreground">
-                    Website
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                    Password <span className="text-destructive">*</span>
                   </label>
                   <input
-                    type="url"
-                    name="website"
-                    id="website"
-                    value={formData.website}
+                    type="password"
+                    name="password"
+                    id="password"
+                    value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                    placeholder="https://example.com"
+                    className={`w-full px-4 py-3 bg-input border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
+                      errors.password ? "border-destructive" : "border-border"
+                    }`}
+                    placeholder="Enter password (min. 6 characters)"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="status" className="block text-sm font-medium text-foreground">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    id="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="address" className="block text-sm font-medium text-foreground">
-                  Address
-                </label>
-                <textarea
-                  name="address"
-                  id="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
-                  placeholder="Enter company address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="description" className="block text-sm font-medium text-foreground">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  id="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
-                  placeholder="Brief description of the company"
-                />
-              </div>
-            </div>
-
-            {/* Logo Upload */}
-            <div className="space-y-6">
-              <h4 className="text-lg font-semibold text-foreground border-b border-border pb-2">Company Logo</h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors">
-                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-4" />
-                    <label className="cursor-pointer">
-                      <span className="text-primary font-medium hover:text-primary/80">Upload a file</span>
-                      <span className="text-muted-foreground"> or drag and drop</span>
-                      <input type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-2">PNG, JPG, GIF up to 10MB</p>
-                  </div>
-                  {errors.logo && (
+                  {errors.password && (
                     <p className="text-sm text-destructive flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.logo}
+                      {errors.password}
                     </p>
                   )}
                 </div>
-
-                {logoPreview && (
-                  <div className="flex items-center justify-center">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-foreground">Logo Preview</p>
-                      <div className="w-32 h-32 rounded-xl overflow-hidden border border-border bg-muted flex items-center justify-center">
-                        <img
-                          src={logoPreview || "/placeholder.svg"}
-                          alt="Logo preview"
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -760,8 +790,18 @@ const ModernAddCompanyForm = () => {
               <button
                 type="button"
                 className="px-6 py-3 border border-border text-foreground bg-background hover:bg-muted rounded-xl font-medium transition-colors"
+                onClick={() => {
+                  setFormData({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    category: "",
+                    password: "",
+                  })
+                  setErrors({})
+                }}
               >
-                Cancel
+                Clear Form
               </button>
               <button
                 type="submit"
@@ -784,6 +824,23 @@ const ModernAddCompanyForm = () => {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const ModernTemplateForm = () => {
   const [formData, setFormData] = useState({
