@@ -9,9 +9,15 @@ const getAppointmentsModel = async () => {
 // Get all appointees for a specific company (across all services)
 const getAppointeesByCompany = async (companyId) => {
   const sql = `
-    SELECT u.user_id, u.name, u.email, u.phone, u.telegram_id, a.appointment_id, a.start_time, a.end_time, a.status
+    SELECT 
+      u.user_id, u.name, u.email, u.phone, u.telegram_id, u.address,
+      a.appointment_id, a.company_id, a.start_time, a.end_time, a.status,
+      cs.service_id, cs.name AS service_name,
+      ca.branch_name, ca.location
     FROM users u
     JOIN appointments a ON u.user_id = a.client_id
+    JOIN company_services cs ON a.service_id = cs.service_id
+    JOIN company_addresses ca ON a.company_id = ca.company_id
     WHERE a.company_id = ?
     ORDER BY a.start_time DESC
   `;
@@ -19,18 +25,27 @@ const getAppointeesByCompany = async (companyId) => {
   return result;
 };
 
+
 // Get appointees for a specific company and specific service
 const getAppointeesByServiceInCompany = async (companyId, serviceId) => {
   const sql = `
-    SELECT u.user_id, u.name, u.email, u.phone, u.telegram_id, a.appointment_id, a.start_time, a.end_time, a.status
+    SELECT 
+      u.user_id, u.name, u.email, u.phone, u.telegram_id, u.address,
+      a.appointment_id, a.company_id, a.start_time, a.end_time, a.status,
+      cs.service_id, cs.name AS service_name,
+      ca.branch_name, ca.location
     FROM users u
     JOIN appointments a ON u.user_id = a.client_id
+    JOIN company_services cs ON a.service_id = cs.service_id
+    JOIN company_addresses ca ON a.company_id = ca.company_id
     WHERE a.company_id = ? AND a.service_id = ?
     ORDER BY a.start_time DESC
   `;
   const [result] = await mySqlConnection.query(sql, [companyId, serviceId]);
   return result;
 };
+
+
 
 // Count of unique appointees for a specific company (across all services)
 const countAppointeesByCompany = async (companyId) => {
@@ -62,8 +77,12 @@ const addAppointmentModel = async (data) => {
 };
 
 const updateAppointmentModel = async (id, data) => {
+  // Format the ISO 8601 strings to 'YYYY-MM-DD HH:MM:SS' for MySQL
+  const formattedStartTime = new Date(data.start_time).toISOString().slice(0, 19).replace('T', ' ');
+  const formattedEndTime = new Date(data.end_time).toISOString().slice(0, 19).replace('T', ' ');
+  
   const sql = `UPDATE appointments SET company_id = ?, client_id = ?, service_id = ?, start_time = ?, end_time = ?, status = ? WHERE appointment_id = ?`;
-  await mySqlConnection.query(sql, [data.company_id, data.client_id, data.service_id, data.start_time, data.end_time, data.status, id]);
+  await mySqlConnection.query(sql, [data.company_id, data.client_id, data.service_id, formattedStartTime, formattedEndTime, data.status, id]);
 };
 
 const deleteAppointmentModel = async (id) => {

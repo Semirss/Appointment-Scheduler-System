@@ -72,7 +72,9 @@ export const updateAppointment = async (req, res) => {
     await updateAppointmentModel(req.params.id, req.body);
     res.json({ success: true, message: "Appointment updated" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to update appointment" });
+    // This is the key change: log the specific error from the database
+    console.error("Error in updateAppointment:", error);
+    res.status(500).json({ success: false, message: "Failed to update appointment", error: error.message });
   }
 };
 

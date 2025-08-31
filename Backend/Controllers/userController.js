@@ -28,9 +28,9 @@ export const getUser = async (req, res) => {
 };
 
 export const addUser = async (req, res) => {
-  const { name, email, phone, telegram_id } = req.body;
+  const { name, email, phone, telegram_id, address } = req.body;
   try {
-    await addUserModel({ name, email, phone, telegram_id });
+    await addUserModel({ name, email, phone, telegram_id, address });
     res.status(201).json({ success: true, message: "User added successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to add user" });
