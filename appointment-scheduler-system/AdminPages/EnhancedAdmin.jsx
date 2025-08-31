@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   BarChart3,
-  Users,
   Building2,
   TrendingUp,
   Bell,
@@ -22,13 +21,138 @@ import {
   CheckCircle,
   Menu,
   X,
+  MoreHorizontal,
 } from "lucide-react"
+
+const EnhancedLineChart = () => {
+  return (
+    <div>
+      {/* Placeholder for EnhancedLineChart */}
+      <p>Enhanced Line Chart Component</p>
+    </div>
+  )
+}
 
 const EnhancedAdmin = () => {
   const [currentPage, setCurrentPage] = useState("dashboard")
   const [notificationCount, setNotificationCount] = useState(3)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [companies, setCompanies] = useState([])
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true)
+  const [companiesError, setCompaniesError] = useState(null)
+  const [appointments, setAppointments] = useState([])
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
+  const [recentActivities, setRecentActivities] = useState([])
+
+  const fetchCompanies = async () => {
+    try {
+      setIsLoadingCompanies(true)
+      setCompaniesError(null)
+
+      const response = await fetch("http://localhost:5000/api/companies")
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        setCompanies(result.data)
+        updateRecentActivities("company", result.data[result.data.length - 1]?.name)
+      } else {
+        throw new Error(result.message || "Failed to fetch companies")
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error)
+      setCompaniesError(error.message)
+      setCompanies([])
+    } finally {
+      setIsLoadingCompanies(false)
+    }
+  }
+
+  const fetchAppointments = async () => {
+    try {
+      setIsLoadingAppointments(true)
+      const response = await fetch("http://localhost:5000/api/appointments")
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        setAppointments(result.data)
+        // Update recent activities for appointments
+        if (result.data.length > 0) {
+          updateRecentActivities("appointment", result.data[result.data.length - 1])
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error)
+      setAppointments([])
+    } finally {
+      setIsLoadingAppointments(false)
+    }
+  }
+
+  const updateRecentActivities = (type, data) => {
+    const now = new Date()
+    let newActivity = {}
+
+    if (type === "company" && data) {
+      newActivity = {
+        title: "New company registered",
+        description: `${data} joined the platform`,
+        time: "Just now",
+        icon: Building2,
+        color: "bg-chart-1",
+        timestamp: now,
+      }
+    } else if (type === "appointment" && data) {
+      newActivity = {
+        title: "New appointment scheduled",
+        description: `Appointment #${data.id} has been booked`,
+        time: "Just now",
+        icon: Calendar,
+        color: "bg-chart-2",
+        timestamp: now,
+      }
+    }
+
+    if (Object.keys(newActivity).length > 0) {
+      setRecentActivities((prev) => [newActivity, ...prev.slice(0, 3)])
+    }
+  }
+
+  useEffect(() => {
+    fetchCompanies()
+    fetchAppointments()
+    setRecentActivities([
+      {
+        title: "System initialized",
+        description: "Admin dashboard loaded successfully",
+        time: "1 minute ago",
+        icon: CheckCircle,
+        color: "bg-chart-4",
+        timestamp: new Date(Date.now() - 60000),
+      },
+    ])
+  }, [])
+
+  const getCompanyAppointmentCount = async (companyId) => {
+    try {
+      const response = await fetch(`/api/appointments/countByCompany/${companyId}`)
+      const data = await response.json()
+      return data.success ? data.data.total_appointees : 0
+    } catch (error) {
+      console.error("Error fetching appointment count:", error)
+      return 0
+    }
+  }
 
   const handleNavigation = (page) => {
     setCurrentPage(page)
@@ -38,15 +162,40 @@ const EnhancedAdmin = () => {
   const renderContent = () => {
     switch (currentPage) {
       case "dashboard":
-        return <ModernDashboardView />
+        return (
+          <ModernDashboardView
+            companies={companies}
+            isLoading={isLoadingCompanies}
+            appointments={appointments}
+            isLoadingAppointments={isLoadingAppointments}
+            recentActivities={recentActivities}
+            getCompanyAppointmentCount={getCompanyAppointmentCount}
+          />
+        )
       case "addCompany":
-        return <ModernAddCompanyForm />
+        return <ModernAddCompanyForm onCompanyAdded={fetchCompanies} />
       case "viewCompanies":
-        return <ModernViewCompaniesList companies={mockCompanies} />
+        return (
+          <ModernViewCompaniesList
+            companies={companies}
+            isLoading={isLoadingCompanies}
+            error={companiesError}
+            getCompanyAppointmentCount={getCompanyAppointmentCount}
+          />
+        )
       case "template":
         return <ModernTemplateForm />
       default:
-        return <ModernDashboardView />
+        return (
+          <ModernDashboardView
+            companies={companies}
+            isLoading={isLoadingCompanies}
+            appointments={appointments}
+            isLoadingAppointments={isLoadingAppointments}
+            recentActivities={recentActivities}
+            getCompanyAppointmentCount={getCompanyAppointmentCount}
+          />
+        )
     }
   }
 
@@ -206,242 +355,228 @@ const EnhancedAdmin = () => {
   )
 }
 
-const ModernDashboardView = () => {
+const ModernDashboardView = ({
+  companies = [],
+  isLoading = false,
+  appointments = [],
+  isLoadingAppointments = false,
+  recentActivities = [],
+  getCompanyAppointmentCount = () => 0,
+}) => {
   const [selectedTimeRange, setSelectedTimeRange] = useState("7d")
-  const [isLoading, setIsLoading] = useState(false)
+  const [companyAppointmentCounts, setCompanyAppointmentCounts] = useState({})
+
+  useEffect(() => {
+    const fetchAppointmentCounts = async () => {
+      const counts = {}
+      for (const company of companies) {
+        try {
+          const response = await fetch(`/api/appointments/countByCompany/${company.id}`)
+          const data = await response.json()
+          counts[company.id] = data.success ? data.data.total_appointees : 0
+        } catch (error) {
+          console.error(`Error fetching count for company ${company.id}:`, error)
+          counts[company.id] = 0
+        }
+      }
+      setCompanyAppointmentCounts(counts)
+    }
+
+    if (companies.length > 0) {
+      fetchAppointmentCounts()
+    }
+  }, [companies])
 
   const stats = [
     {
       title: "Total Companies",
-      value: "124",
+      value: isLoading ? "..." : companies.length.toString(),
       change: "+12%",
       trend: "up",
       icon: Building2,
-      color: "from-chart-1 to-chart-1/80",
+      color: "from-blue-500 to-blue-600",
     },
     {
-      title: "Active Users",
-      value: "2,415",
+      title: "Total Appointments",
+      value: isLoadingAppointments ? "..." : appointments.length.toString(),
       change: "+8%",
       trend: "up",
-      icon: Users,
-      color: "from-chart-2 to-chart-2/80",
-    },
-    {
-      title: "Revenue",
-      value: "$48,392",
-      change: "+23%",
-      trend: "up",
-      icon: DollarSign,
-      color: "from-chart-3 to-chart-3/80",
-    },
-    {
-      title: "Appointments",
-      value: "1,847",
-      change: "-3%",
-      trend: "down",
       icon: Calendar,
-      color: "from-chart-4 to-chart-4/80",
+      color: "from-green-500 to-green-600",
+    },
+    {
+      title: "Active Companies",
+      value: isLoading ? "..." : companies.filter((c) => c.status === "Active").length.toString(),
+      change: "+5%",
+      trend: "up",
+      icon: Activity,
+      color: "from-purple-500 to-purple-600",
     },
   ]
 
-  const appointmentData = [
-    { company: "Innovate Solutions", count: 142, status: "High", growth: "+15%", avatar: "IS" },
-    { company: "Green Harvest Farm", count: 98, status: "Medium", growth: "+8%", avatar: "GH" },
-    { company: "Urban Fitness Co.", count: 203, status: "High", growth: "+22%", avatar: "UF" },
-    { company: "Apex Logistics", count: 76, status: "Medium", growth: "+5%", avatar: "AL" },
-    { company: "Petal & Stem Florist", count: 45, status: "Low", growth: "-2%", avatar: "PS" },
-  ]
+  const topCompaniesData = companies
+    .map((company) => ({
+      company: company.name,
+      count: companyAppointmentCounts[company.id] || 0,
+      status: company.status === "Active" ? "High" : "Medium",
+      growth: `+${Math.floor(Math.random() * 25) + 5}%`,
+      avatar: company.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2),
+    }))
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
 
   return (
-    <div className="space-y-8">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
             <div
               key={index}
-              className="bg-card rounded-2xl p-6 border border-border hover-lift cursor-pointer group animate-slide-in-up"
+              className="bg-card rounded-lg p-3 border border-border hover-lift cursor-pointer group animate-slide-in-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2">
                 <div
-                  className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}
+                  className={`w-8 h-8 bg-gradient-to-br ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}
                 >
-                  <Icon className="w-6 h-6 text-white" />
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div
-                  className={`flex items-center space-x-1 text-sm font-medium ${
-                    stat.trend === "up" ? "text-chart-1" : "text-destructive"
+                  className={`flex items-center space-x-1 text-xs font-medium ${
+                    stat.trend === "up" ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  <TrendingUp className={`w-4 h-4 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+                  <TrendingUp className={`w-3 h-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
                   <span>{stat.change}</span>
                 </div>
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground mb-1">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
+                <p className="text-lg font-bold text-foreground mb-1">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.title}</p>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Enhanced Chart Card */}
-        <div className="bg-card rounded-2xl p-6 border border-border hover-lift">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recent Activity - Updated with real data */}
+        <div className="bg-card rounded-lg p-4 border border-border hover-lift">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Revenue Analytics</h3>
-              <p className="text-sm text-muted-foreground">Monthly performance overview</p>
+              <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
+              <p className="text-xs text-muted-foreground">Live system updates</p>
             </div>
-            <select
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
-              className="px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
+            <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+              <Filter className="w-3 h-3 text-muted-foreground" />
+            </button>
           </div>
-          <div className="h-64 flex items-center justify-center">
-            <EnhancedLineChart />
+          <div className="space-y-2">
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-start space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${activity.color}`}>
+                    <activity.icon className="w-3 h-3 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground">{activity.title}</p>
+                    <p className="text-xs text-muted-foreground">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-6">
+                <Activity className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No recent activity</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Activity Feed */}
-        <div className="bg-card rounded-2xl p-6 border border-border hover-lift">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-card rounded-lg p-4 border border-border hover-lift">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
-              <p className="text-sm text-muted-foreground">Latest system updates</p>
+              <h3 className="text-base font-semibold text-foreground">Top Companies</h3>
+              <p className="text-xs text-muted-foreground">By appointment count</p>
             </div>
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+            <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+              <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
             </button>
           </div>
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
+          <div className="space-y-2">
+            {topCompaniesData.length > 0 ? (
+              topCompaniesData.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">{item.avatar}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{item.company}</p>
+                      <p className="text-xs text-muted-foreground">{item.status} activity</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-foreground">{item.count}</p>
+                    <p className="text-xs text-green-600">{item.growth}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-6">
+                <Calendar className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No appointment data available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {appointments.length > 0 && (
+        <div className="bg-card rounded-lg p-4 border border-border hover-lift">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Recent Appointments</h3>
+              <p className="text-xs text-muted-foreground">Latest company bookings</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {appointments.slice(0, 8).map((appointment, index) => (
               <div
-                key={index}
-                className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                key={appointment.id || index}
+                className="p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors text-center"
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.color}`}>
-                  <activity.icon className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                </div>
+                <p className="text-xs font-medium text-foreground truncate">
+                  {appointment.company_name || "Unknown Company"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {appointment.appointment_date
+                    ? new Date(appointment.appointment_date).toLocaleDateString()
+                    : "No date"}
+                </p>
               </div>
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Enhanced Appointment Analytics */}
-      <div className="bg-card rounded-2xl p-6 border border-border hover-lift">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Top Performing Companies</h3>
-            <p className="text-sm text-muted-foreground">Appointment booking analytics</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
-              <Download className="w-4 h-4 mr-2 inline" />
-              Export
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">Company</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">Appointments</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">Growth</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">Status</th>
-                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-sm">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {appointmentData.map((item, index) => (
-                <tr key={index} className="border-b border-border hover:bg-muted/30 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">{item.avatar}</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{item.company}</p>
-                        <p className="text-xs text-muted-foreground">Active since 2023</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <p className="font-semibold text-foreground">{item.count}</p>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`text-sm font-medium ${
-                        item.growth.startsWith("+") ? "text-chart-1" : "text-destructive"
-                      }`}
-                    >
-                      {item.growth}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        item.status === "High"
-                          ? "bg-chart-1/20 text-chart-1"
-                          : item.status === "Medium"
-                            ? "bg-chart-4/20 text-chart-4"
-                            : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                        <Eye className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                        <Edit className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ModernAddCompanyForm = () => {
+const ModernAddCompanyForm = ({ onCompanyAdded }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -487,124 +622,72 @@ const ModernAddCompanyForm = () => {
   }
 
   const handleSubmit = async (e) => {
-  e.preventDefault()
+    e.preventDefault()
 
-  if (!validateForm()) return
+    if (!validateForm()) return
 
-  setIsSubmitting(true)
+    setIsSubmitting(true)
 
-  try {
-    // Log the data being sent for debugging
-    console.log("Submitting company data:", formData);
-    
-    const response = await fetch("http://localhost:5000/api/companies", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    })
+    try {
+      const response = await fetch("http://localhost:5000/api/companies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
 
-    console.log("Response status:", response.status);
-    console.log("Response ok:", response.ok);
-    
-    // Check if this is a CORS preflight issue
-    if (response.status === 0) {
-      // This typically indicates a CORS error
-      throw new Error("CORS error: Request was blocked. Check server CORS configuration.");
-    }
-    
-    // Get the response text first to see what's actually coming back
-    const responseText = await response.text();
-    console.log("Raw response text:", responseText);
-    
-    // Try to parse as JSON if it's not empty
-    let result = null;
-    if (responseText && responseText.trim() !== '') {
-      try {
-        result = JSON.parse(responseText);
-        console.log("Parsed JSON response:", result);
-      } catch (parseError) {
-        console.error("Failed to parse response as JSON:", parseError);
-        throw new Error(`Server returned non-JSON response: ${responseText}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Server error: ${response.status}`)
       }
-    } else {
-      console.log("Empty response received");
-      // Handle empty response - check if it's a success
-      if (response.ok) {
-        setSuccessMessage("Company added successfully!")
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          category: "",
-          password: "",
-        })
-        return;
+
+      const result = await response.json()
+
+      setSuccessMessage(result.message || "Company added successfully!")
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        category: "",
+        password: "",
+      })
+
+      if (onCompanyAdded) {
+        onCompanyAdded()
+      }
+    } catch (error) {
+      console.error("Error adding company:", error)
+      setErrors({ submit: error.message })
+    } finally {
+      setIsSubmitting(false)
+
+      setTimeout(() => {
+        setSuccessMessage("")
+        setErrors({})
+      }, 5000)
+    }
+  }
+
+  // Update the test connection function to test the actual API endpoint
+  const testServerConnection = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/companies", {
+        method: "OPTIONS", // Test with OPTIONS to check CORS
+      })
+      console.log("OPTIONS test response status:", response.status)
+
+      if (response.status === 204 || response.status === 200) {
+        console.log("CORS preflight is working!")
+        setErrors({ submit: "CORS preflight is working! You can now submit the form." })
       } else {
-        throw new Error(`Server returned empty response with status: ${response.status}`);
+        setErrors({ submit: `CORS preflight test failed with status: ${response.status}` })
       }
+    } catch (error) {
+      console.error("CORS test failed:", error)
+      setErrors({ submit: "CORS preflight failed. Please check your backend CORS configuration." })
     }
-    
-    if (!response.ok) {
-      // Try to get error message from server response or use default
-      const errorMsg = result?.message || `Server error: ${response.status} ${response.statusText}`;
-      throw new Error(errorMsg)
-    }
-
-    // If we get here, the request was successful with JSON response
-    setSuccessMessage(result.message || "Company added successfully!")
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      category: "",
-      password: "",
-    })
-    
-  } catch (error) {
-    console.error("Error adding company:", error)
-    
-    // More specific error messages
-    let errorMessage = error.message;
-    if (error.message.includes("Failed to fetch")) {
-      errorMessage = "Cannot connect to server. Please make sure the backend is running on port 5000.";
-    } else if (error.message.includes("CORS")) {
-      errorMessage = "CORS error: The request was blocked. Please check your browser console for CORS errors and ensure your backend has proper CORS configuration.";
-    } else if (error.message.includes("Network error")) {
-      errorMessage = "Network error. Please check your connection.";
-    }
-    
-    setErrors({ submit: errorMessage })
-  } finally {
-    setIsSubmitting(false)
-    
-    setTimeout(() => {
-      setSuccessMessage("")
-      setErrors({})
-    }, 5000)
   }
-}
-
-// Update the test connection function to test the actual API endpoint
-const testServerConnection = async () => {
-  try {
-    const response = await fetch("http://localhost:5000/api/companies", {
-      method: "OPTIONS", // Test with OPTIONS to check CORS
-    });
-    console.log("OPTIONS test response status:", response.status);
-    
-    if (response.status === 204 || response.status === 200) {
-      console.log("CORS preflight is working!");
-      setErrors({ submit: "CORS preflight is working! You can now submit the form." });
-    } else {
-      setErrors({ submit: `CORS preflight test failed with status: ${response.status}` });
-    }
-  } catch (error) {
-    console.error("CORS test failed:", error);
-    setErrors({ submit: "CORS preflight failed. Please check your backend CORS configuration." });
-  }
-}
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-card rounded-2xl border border-border overflow-hidden hover-lift">
@@ -636,10 +719,7 @@ const testServerConnection = async () => {
               <br />
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
-                "name": "Company Name", 
-                "email": "email@example.com",
-                "phone": "123-456-7890", 
-                "category": "Category",
+                "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
                 "password": "password123"
                 {"}"}
               </code>
@@ -651,9 +731,7 @@ const testServerConnection = async () => {
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-foreground mb-2">Add New Company</h3>
             <p className="text-muted-foreground">Fill in the details below to register a new company in the system.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              API Endpoint: /api/companies
-            </p>
+            <p className="text-sm text-muted-foreground mt-2">API Endpoint: /api/companies</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -824,23 +902,6 @@ const testServerConnection = async () => {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const ModernTemplateForm = () => {
   const [formData, setFormData] = useState({
@@ -1166,18 +1227,45 @@ const ModernTemplateForm = () => {
   )
 }
 
-const ModernViewCompaniesList = ({ companies }) => {
+const ModernViewCompaniesList = ({
+  companies = [],
+  isLoading = false,
+  error = null,
+  getCompanyAppointmentCount = () => 0,
+}) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState("asc")
+  const [companyAppointmentCounts, setCompanyAppointmentCounts] = useState({})
+
+  useEffect(() => {
+    const fetchAppointmentCounts = async () => {
+      const counts = {}
+      for (const company of companies) {
+        try {
+          const response = await fetch(`/api/appointments/countByCompany/${company.id}`)
+          const data = await response.json()
+          counts[company.id] = data.success ? data.data.total_appointees : 0
+        } catch (error) {
+          console.error(`Error fetching count for company ${company.id}:`, error)
+          counts[company.id] = 0
+        }
+      }
+      setCompanyAppointmentCounts(counts)
+    }
+
+    if (companies.length > 0) {
+      fetchAppointmentCounts()
+    }
+  }, [companies])
 
   const filteredCompanies = companies
     .filter((company) => {
       const matchesSearch =
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+        (company.email && company.email.toLowerCase().includes(searchTerm.toLowerCase()))
       const matchesStatus = statusFilter === "all" || company.status === statusFilter
       const matchesCategory = categoryFilter === "all" || company.category === categoryFilter
 
@@ -1193,7 +1281,34 @@ const ModernViewCompaniesList = ({ companies }) => {
       return 0
     })
 
-  const categories = [...new Set(companies.map((c) => c.category))]
+  const categories = [...new Set(companies.map((c) => c.category).filter(Boolean))]
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-3" />
+            <p className="text-muted-foreground">Loading companies...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Companies</h3>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -1283,43 +1398,45 @@ const ModernViewCompaniesList = ({ companies }) => {
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {company.name}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{company.category}</p>
+                  <p className="text-sm text-muted-foreground">{company.category || "Uncategorized"}</p>
                 </div>
               </div>
 
               <span
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  company.status === "Active" ? "bg-chart-1/20 text-chart-1" : "bg-chart-4/20 text-chart-4"
+                  company.status === "Active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                 }`}
               >
-                {company.status}
+                {company.status || "Unknown"}
               </span>
             </div>
 
             <div className="space-y-2 mb-4">
               <p className="text-sm text-muted-foreground">
-                <strong>Contact:</strong> {company.contactPerson}
+                <strong>Email:</strong> {company.email || "Not provided"}
               </p>
               <p className="text-sm text-muted-foreground">
-                <strong>Since:</strong> 2023
+                <strong>Phone:</strong> {company.phone || "Not provided"}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-3 border-t border-border">
               <div className="flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-chart-1" />
-                <span className="text-sm font-medium text-chart-1">142 appointments</span>
+                <Activity className="w-3 h-3 text-green-600" />
+                <span className="text-xs font-medium text-green-600">
+                  {companyAppointmentCounts[company.id] || 0} appointments
+                </span>
               </div>
 
               <div className="flex items-center space-x-1">
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                  <Eye className="w-4 h-4 text-muted-foreground" />
+                <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+                  <Eye className="w-3 h-3 text-muted-foreground" />
                 </button>
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                  <Edit className="w-4 h-4 text-muted-foreground" />
+                <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+                  <Edit className="w-3 h-3 text-muted-foreground" />
                 </button>
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4 text-muted-foreground" />
+                <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+                  <Trash2 className="w-3 h-3 text-muted-foreground" />
                 </button>
               </div>
             </div>
@@ -1327,7 +1444,7 @@ const ModernViewCompaniesList = ({ companies }) => {
         ))}
       </div>
 
-      {filteredCompanies.length === 0 && (
+      {filteredCompanies.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">No companies found</h3>
@@ -1337,105 +1454,6 @@ const ModernViewCompaniesList = ({ companies }) => {
     </div>
   )
 }
-
-const EnhancedLineChart = () => {
-  const data = [
-    { month: "Jan", value: 4000 },
-    { month: "Feb", value: 3000 },
-    { month: "Mar", value: 5000 },
-    { month: "Apr", value: 4500 },
-    { month: "May", value: 6000 },
-    { month: "Jun", value: 5500 },
-  ]
-
-  const maxValue = Math.max(...data.map((d) => d.value))
-  const minValue = Math.min(...data.map((d) => d.value))
-  const range = maxValue - minValue
-
-  return (
-    <div className="w-full h-full relative">
-      <svg viewBox="0 0 400 200" className="w-full h-full">
-        {/* Grid lines */}
-        {[0, 50, 100, 150, 200].map((y) => (
-          <line key={y} x1="40" y1={y} x2="400" y2={y} stroke="hsl(var(--border))" strokeWidth="1" opacity="0.3" />
-        ))}
-
-        {/* Data line */}
-        <polyline
-          fill="none"
-          stroke="hsl(var(--primary))"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          points={data
-            .map((item, i) => `${40 + (i / (data.length - 1)) * 360},${200 - ((item.value - minValue) / range) * 160}`)
-            .join(" ")}
-        />
-
-        {/* Data points */}
-        {data.map((item, i) => (
-          <circle
-            key={i}
-            cx={40 + (i / (data.length - 1)) * 360}
-            cy={200 - ((item.value - minValue) / range) * 160}
-            r="4"
-            fill="hsl(var(--primary))"
-            className="hover:r-6 transition-all cursor-pointer"
-          />
-        ))}
-
-        {/* Fill under line */}
-        <polygon
-          fill="url(#gradient)"
-          fillOpacity="0.2"
-          points={`${data
-            .map((item, i) => `${40 + (i / (data.length - 1)) * 360},${200 - ((item.value - minValue) / range) * 160}`)
-            .join(" ")}, 400,200, 40,200`}
-        />
-
-        {/* Gradient definition */}
-        <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-
-        {/* Labels */}
-        {data.map((item, i) => (
-          <text
-            key={i}
-            x={40 + (i / (data.length - 1)) * 360}
-            y="220"
-            textAnchor="middle"
-            fontSize="12"
-            fill="hsl(var(--muted-foreground))"
-          >
-            {item.month}
-          </text>
-        ))}
-      </svg>
-    </div>
-  )
-}
-
-// Mock data
-const mockCompanies = [
-  { id: 1, name: "Innovate Solutions", category: "Tech Consulting", contactPerson: "Jane Doe", status: "Active" },
-  { id: 2, name: "Green Harvest Farm", category: "Agriculture", contactPerson: "John Smith", status: "Awaiting Setup" },
-  { id: 3, name: "Urban Fitness Co.", category: "Health & Wellness", contactPerson: "Emily White", status: "Active" },
-  { id: 4, name: "Apex Logistics", category: "Transportation", contactPerson: "Michael Brown", status: "Active" },
-  { id: 5, name: "Petal & Stem Florist", category: "Retail", contactPerson: "Sarah Chen", status: "Awaiting Setup" },
-  { id: 6, name: "Digital Marketing Pro", category: "Marketing", contactPerson: "Alex Johnson", status: "Active" },
-  { id: 7, name: "Coastal Real Estate", category: "Real Estate", contactPerson: "Maria Garcia", status: "Active" },
-  {
-    id: 8,
-    name: "TechStart Incubator",
-    category: "Technology",
-    contactPerson: "David Wilson",
-    status: "Awaiting Setup",
-  },
-]
 
 const recentActivities = [
   {
