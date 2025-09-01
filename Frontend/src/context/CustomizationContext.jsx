@@ -24,6 +24,9 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
     header_text: '#1F2937',
     logo_url: '',
     banner_image: '',
+    font_family: 'Inter',
+    font_size_base: '16px',
+    font_heading: 'Inter',
     // description: ''
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +50,9 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
           header_text: dbData.header_text_color || '#1F2937',
           logo_url: dbData.logo_url || '',
           banner_image: dbData.banner_image || '',
+          font_family: dbData.font_family || 'Inter',
+          font_size_base: dbData.font_size_base || '16px',
+          font_heading: dbData.font_heading || dbData.font_family || 'Inter',
         //   description: dbData.description || ''
         });
       }
@@ -72,6 +78,9 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
         header_text_color: newCustomization.header_text,
         logo_url: newCustomization.logo_url,
         banner_image: newCustomization.banner_image,
+        font_family: newCustomization.font_family,
+        font_size_base: newCustomization.font_size_base,
+        font_heading: newCustomization.font_heading,
         // description: newCustomization.description
       });
     } catch (error) {
