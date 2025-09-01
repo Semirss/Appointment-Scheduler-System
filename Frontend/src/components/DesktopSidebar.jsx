@@ -1,29 +1,61 @@
 import React from 'react';
 import { FaTh, FaCalendarAlt, FaPlus, FaUserEdit, FaExchangeAlt, FaBars, FaChevronLeft } from 'react-icons/fa';
+import { useCustomization } from '../context/CustomizationContext';
+import { useCompany } from '../context/CompanyContext';
+;
 
 const navItems = [
   { name: 'Dashboard', icon: <FaTh /> },
   { name: 'View Appointment', icon: <FaCalendarAlt /> },
   { name: 'Add Appointment', icon: <FaPlus /> },
-  { name: 'Update Information', icon: <FaUserEdit /> },
+  { name: 'Update Customization', icon: <FaUserEdit /> },
   { name: 'View Transaction', icon: <FaExchangeAlt /> },
 ];
 
 const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }) => {
+  const { customization } = useCustomization();
+  const { company } = useCompany();
+
+  const sidebarStyle = {
+    backgroundColor: customization.sidebar_bg,
+    color: customization.sidebar_text,
+    borderRight: `1px solid ${customization.theme_button}20`
+  };
+
+  const activeItemStyle = {
+    backgroundColor: `${customization.theme_button}20`,
+    color: customization.theme_button,
+    borderLeft: `4px solid ${customization.theme_button}`
+  };
+
+  const hoverStyle = {
+    backgroundColor: `${customization.theme_button}10`,
+    color: customization.sidebar_text
+  };
+
   return (
     <div
-      className={`bg-white h-screen flex flex-col fixed top-0 left-0 transition-all duration-300 z-50 border-r border-gray-200 ${
+      className={`h-screen flex flex-col fixed top-0 left-0 transition-all duration-300 z-50 ${
         isCollapsed ? 'w-20' : 'w-64'
       } hidden md:flex`}
+      style={sidebarStyle}
     >
       {/* Header */}
-      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 border-b border-gray-100`}>
+      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 border-b`} style={{ borderColor: `${customization.theme_button}20` }}>
         {!isCollapsed && (
-          <span className="text-xl font-bold text-gray-800 tracking-wide">Kati</span>
+          <span className="text-sm font-bold tracking-wide">
+            {company}
+          </span>
         )}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)} 
-          className="p-3 rounded-md text-gray-500 hover:bg-gray-100 transition-colors text-xl"
+          className="p-3 rounded-md transition-colors text-xl"
+          style={{ 
+            color: customization.sidebar_text,
+            backgroundColor: 'transparent'
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
+          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
         >
           {isCollapsed ? <FaBars className="text-xl" /> : <FaChevronLeft className="text-xl" />}
         </button>
@@ -35,11 +67,22 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
           <div
             key={item.name}
             className={`flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-              activeTab === item.name 
-                ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 font-semibold' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+              activeTab === item.name ? 'font-semibold' : ''
             }`}
+            style={activeTab === item.name ? activeItemStyle : { color: customization.sidebar_text }}
             onClick={() => setActiveTab(item.name)}
+            // onMouseOver={(e) => {
+            //   if (activeTab !== item.name) {
+            //     e.target.style.backgroundColor = hoverStyle.backgroundColor;
+            //     e.target.style.color = hoverStyle.color;
+            //   }
+            // }}
+            // onMouseOut={(e) => {
+            //   if (activeTab !== item.name) {
+            //     e.target.style.backgroundColor = 'transparent';
+            //     e.target.style.color = customization.sidebar_text;
+            //   }
+            // }}
           >
             <div className={`text-lg ${isCollapsed ? '' : 'mr-3'}`}>
               {item.icon}
@@ -53,8 +96,8 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
       
       {/* Footer (optional) */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-100 text-xs text-gray-500 text-center">
-          © 2023 Kati App v1.2.0
+        <div className="p-4 border-t text-xs text-center" style={{ borderColor: `${customization.theme_button}20`, color: customization.sidebar_text }}>
+          © 2025 Gravity Technology. All Rights Reserved.
         </div>
       )}
     </div>

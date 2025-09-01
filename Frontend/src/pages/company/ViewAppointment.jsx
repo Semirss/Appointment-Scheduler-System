@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useCustomization } from '../../context/CustomizationContext';
+
 
 const ViewAppointment = () => {
+  const { customization } = useCustomization(); // Get customization data
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,15 +14,59 @@ const ViewAppointment = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [availableBranches, setAvailableBranches] = useState([]);
   const [availableServices, setAvailableServices] = useState([]);
+  const [availableClients, setAvailableClients] = useState([]);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [newAppointmentLoading, setNewAppointmentLoading] = useState(false);
   const [rescheduleError, setRescheduleError] = useState('');
   const [newAppointmentError, setNewAppointmentError] = useState('');
   const [showDropdown, setShowDropdown] = useState({});
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+
+  // Apply the customized colors
+  const containerStyle = {
+    backgroundColor: customization.theme_background,
+    color: customization.theme_text,
+  };
+
+//   const cardStyle = {
+//     backgroundColor: customization.theme_background,
+//     color: customization.theme_text,
+//     border: `1px solid ${customization.theme_button}20`
+//   };
+
+  const buttonStyle = {
+    backgroundColor: customization.theme_button,
+    color: getContrastColor(customization.theme_button),
+  };
+
+  const cardStyle = {
+    backgroundColor: customization.theme_card,
+    color: customization.theme_text,
+    border: `1px solid ${customization.theme_button}20`
+};
+
+  // Helper function to determine text color based on background
+  function getContrastColor(hexColor) {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black or white depending on luminance
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  }
 
   // State for the new appointment form data
   const [newAppointmentFormData, setNewAppointmentFormData] = useState({
+    client_id: '',
     name: '',
+    email: '',
+    phone: '',
+    telegram_id: '',
+    address: '',
     service_id: '',
     service_name: '',
     date: '',
@@ -27,8 +74,16 @@ const ViewAppointment = () => {
     end_time: '',
     branch_name: '',
     location: '',
-    phone: '',
   });
+
+  // State for new client form data
+  const [newClientFormData, setNewClientFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    telegram_id: '',
+    address: ''
+    });
 
   // Create a ref for the dropdown container to detect clicks outside of it
   const dropdownRef = useRef(null);
@@ -37,8 +92,10 @@ const ViewAppointment = () => {
   const appointeeId = 2;
   // Set a constant company ID to fetch addresses for
   const companyId = 2;
-  // A placeholder client ID for new appointments
-  const placeholderClientId = 1;
+
+  const generateRandomId = () => {
+    return Math.floor(Math.random() * 1000000) + 1;
+  };
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -65,17 +122,26 @@ const ViewAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/services/${companyId}`);
+        const response = await axios.get(`http://localhost:5000/api/services`);
         setAvailableServices(response.data.data || []);
-        console.log(response.data.data);
       } catch (error) {
         console.error('Error fetching services:', error);
+      }
+    };
+
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/users`);
+        setAvailableClients(response.data.data || []);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
       }
     };
 
     fetchAppointments();
     fetchBranches();
     fetchServices();
+    fetchClients();
   }, [appointeeId, companyId]);
   
   // Effect to handle clicks outside of the dropdown to close it
@@ -137,19 +203,53 @@ const ViewAppointment = () => {
   const handleNewAppointmentClick = () => {
     setShowNewAppointmentModal(true);
     setNewAppointmentError('');
+    setShowNewClientForm(false);
     // Reset form data for a new entry
     setNewAppointmentFormData({
-      name: '',
-      service_id: '',
-      service_name: '',
-      date: '',
-      start_time: '',
-      end_time: '',
-      branch_name: '',
-      location: '',
-      phone: '',
+        client_id: '',
+        name: '',
+        email: '',
+        phone: '',
+        telegram_id: '',
+        address: '',
+        service_id: '',
+        service_name: '',
+        date: '',
+        start_time: '',
+        end_time: '',
+        branch_name: '',
+        location: '',
     });
-  };
+    };
+
+  const handleClientSelection = (clientId) => {
+    if (clientId === 'new') {
+        setShowNewClientForm(true);
+        setNewAppointmentFormData(prev => ({
+        ...prev,
+        client_id: '',
+        name: '',
+        email: '',
+        phone: '',
+        telegram_id: '',
+        address: ''
+        }));
+    } else {
+        const selectedClient = availableClients.find(client => client.user_id.toString() === clientId);
+        if (selectedClient) {
+        setNewAppointmentFormData(prev => ({
+            ...prev,
+            client_id: selectedClient.user_id,
+            name: selectedClient.name,
+            email: selectedClient.email || '',
+            phone: selectedClient.phone || '',
+            telegram_id: selectedClient.telegram_id || '',
+            address: selectedClient.address || ''
+        }));
+        setShowNewClientForm(false);
+        }
+    }
+    };
 
   const handleRescheduleFormSubmit = async (e) => {
     e.preventDefault();
@@ -185,40 +285,84 @@ const ViewAppointment = () => {
     }
   };
 
-  const handleNewAppointmentFormSubmit = async (e) => {
+//   const handleCreateNewClient = async () => {
+//     try {
+//       const response = await axios.post(`http://localhost:5000/api/users`, newClientFormData);
+//       const newClient = response.data.data;
+      
+//       setAvailableClients(prev => [...prev, newClient]);
+      
+//       setNewAppointmentFormData(prev => ({
+//         ...prev,
+//         client_id: newClient.user_id,
+//         name: newClient.name,
+//         email: newClient.email || '',
+//         phone: newClient.phone || '',
+//         telegram_id: newClient.telegram_id || '',
+//         address: newClient.address || ''
+//       }));
+      
+//       setShowNewClientForm(false);
+//     } catch (error) {
+//       console.error('Error creating new client:', error);
+//       setNewAppointmentError('Failed to create new client. Please try again.');
+//     }
+//   };
+
+    const handleNewAppointmentFormSubmit = async (e) => {
     e.preventDefault();
     setNewAppointmentLoading(true);
     setNewAppointmentError('');
 
+    // Generate a random ID for new clients
+    const newClientId = showNewClientForm ? generateRandomId() : newAppointmentFormData.client_id;
+
+    // Convert to MySQL datetime format (YYYY-MM-DD HH:MM:SS)
+    const formatForMySQL = (dateString) => {
+        const date = new Date(dateString);
+        return date.toISOString().slice(0, 19).replace('T', ' ');
+    };
+
     const payload = {
-    //   name: newAppointmentFormData.name,
-      service_id: newAppointmentFormData.service_id,
-    //   service_name: newAppointmentFormData.service_name,
-    //   phone: newAppointmentFormData.phone,
-    //   location: newAppointmentFormData.location,
-    //   branch_name: newAppointmentFormData.branch_name,
-    //   appointee_id: appointeeId,
-      company_id: companyId,
-      client_id: placeholderClientId, // Use a placeholder client ID
-      status: 'scheduled',
-      // Convert time strings to ISO format for the backend
-      start_time: new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.start_time}`).toISOString(),
-      end_time: new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.end_time}`).toISOString(),
+        company_id: companyId,
+        client_id: newClientId, // Use the generated ID for new clients
+        service_id: parseInt(newAppointmentFormData.service_id),
+        start_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.start_time}`)),
+        end_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.end_time}`)),
+        status: 'scheduled',
+        branch_name: newAppointmentFormData.branch_name,
+        location: newAppointmentFormData.location,
+        // Include client data as individual fields (not nested object)
+        name: showNewClientForm ? newAppointmentFormData.name : '',
+        email: showNewClientForm ? newAppointmentFormData.email : '',
+        phone: showNewClientForm ? newAppointmentFormData.phone : '',
+        telegram_id: showNewClientForm ? newAppointmentFormData.telegram_id : '',
+        address: showNewClientForm ? newAppointmentFormData.address : ''
     };
 
     try {
-      await axios.post(`http://localhost:5000/api/appointments`, payload);
-      setShowNewAppointmentModal(false);
-      // Refresh the appointments list
-      const response = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
-      setAppointments(response.data.data || []);
+        console.log("Sending payload:", payload);
+        const response = await axios.post(`http://localhost:5000/api/appointments/createAppointment`, payload);
+        setShowNewAppointmentModal(false);
+        // Refresh the appointments list
+        const appointmentsResponse = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+        setAppointments(appointmentsResponse.data.data || []);
+        // Refresh clients list if a new client was created
+        if (showNewClientForm) {
+        const clientsResponse = await axios.get(`http://localhost:5000/api/users`);
+        setAvailableClients(clientsResponse.data.data || []);
+        }
     } catch (error) {
-      console.error('Error creating new appointment:', error);
-      setNewAppointmentError('Failed to create new appointment. Please try again.');
+        console.error('Error creating new appointment:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+        setNewAppointmentError(error.response.data.message);
+        } else {
+        setNewAppointmentError('Failed to create new appointment. Please try again.');
+        }
     } finally {
-      setNewAppointmentLoading(false);
+        setNewAppointmentLoading(false);
     }
-  };
+    };
 
   const toggleDropdown = (id) => {
     setShowDropdown(prev => ({
@@ -253,17 +397,24 @@ const ViewAppointment = () => {
     );
   }
 
+  const modalStyles = `
+  .scrollable-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+`;
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 min-h-screen" style={containerStyle}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Appointments</h1>
-          <p className="text-gray-600">Manage and view all scheduled appointments</p>
+          <h1 className="text-3xl font-bold mb-2">Appointments</h1>
+          <p>Manage and view all scheduled appointments</p>
         </div>
 
         {/* Controls */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="rounded-lg shadow-sm p-6 mb-6" style={cardStyle}>
           <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
             <div className="relative flex-1 max-w-md">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" fill="currentColor"/></svg>
@@ -292,13 +443,18 @@ const ViewAppointment = () => {
                 <option value="cancelled">Cancelled</option>
               </select>
               
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button
+              style={{ 
+                backgroundColor: customization.theme_background,
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 <svg className="text-sm h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M0 416c0 17.7 14.3 32 32 32l160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 384c-17.7 0-32 14.3-32 32zm32-96l448 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 256c-17.7 0-32 14.3-32 32s14.3 32 32 32zm0-160l320 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 96c-17.7 0-32 14.3-32 32s14.3 32 32 32z" fill="currentColor"/></svg>
                 Filter
               </button>
               
               <button
                 onClick={handleNewAppointmentClick}
+                style={buttonStyle}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 New Appointment
@@ -311,7 +467,9 @@ const ViewAppointment = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAppointments.length > 0 ? (
             filteredAppointments.map((appointment) => (
-              <div key={appointment.appointment_id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={appointment.appointment_id}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              style={cardStyle}>
                 {/* Header */}
                 <div className="border-b border-gray-100 p-4 flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -348,7 +506,10 @@ const ViewAppointment = () => {
                 {/* Body */}
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    <div
+                    
+                    className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold"
+                    >
                       {appointment.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
@@ -389,15 +550,20 @@ const ViewAppointment = () => {
                   <button
                     onClick={() => handleRescheduleClick(appointment)}
                     className="flex-1 py-2 px-3 bg-blue-100 text-blue-700 rounded text-sm font-medium hover:bg-blue-200 transition-colors"
+                    style={{ 
+                        backgroundColor: `${customization.theme_button}20`,
+                        color: customization.theme_button
+                    }}
                   >
                     Reschedule
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => handleRequestRating(appointment)} 
                     className="flex-1 py-2 px-3 bg-green-500 text-white rounded text-sm font-medium hover:bg-green-600 transition-colors"
+                    style={buttonStyle}
                   >
                     Request Rating
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))
@@ -495,33 +661,150 @@ const ViewAppointment = () => {
       {/* New Appointment Modal */}
       {showNewAppointmentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"> {/* Added max-h and overflow-y */}
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-gray-800">Add New Appointment</h2>
-              <button
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2 z-10"> {/* Added sticky header */}
+                <h2 className="text-2xl font-semibold text-gray-800">Add New Appointment</h2>
+                <button
                 onClick={() => setShowNewAppointmentModal(false)}
                 className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-              >
+                >
                 <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
+                </button>
             </div>
 
             {/* Modal Form */}
             <form onSubmit={handleNewAppointmentFormSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Client Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={newAppointmentFormData.name}
-                    onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, name: e.target.value })}
-                    required
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Client Selection */}
+                <div className="md:col-span-2">
+                  <label htmlFor="client_id" className="block text-sm font-medium text-gray-700">Select Client</label>
+                  <select
+                    id="client_id"
+                    name="client_id"
+                    value={newAppointmentFormData.client_id}
+                    onChange={(e) => handleClientSelection(e.target.value)}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                    >
+                    <option value="" disabled>Select a client</option>
+                    {availableClients.map((client) => (
+                        <option key={client.user_id} value={client.user_id}>
+                        {client.name} - {client.phone || 'No phone'}
+                        </option>
+                    ))}
+                    <option value="new">+ New Client</option>
+                </select>
                 </div>
+
+                {/* New Client Form (conditionally rendered) */}
+                {showNewClientForm && (
+                    <>
+                        <div>
+                        <label htmlFor="new_client_name" className="block text-sm font-medium text-gray-700">Name *</label>
+                        <input
+                            type="text"
+                            id="new_client_name"
+                            value={newAppointmentFormData.name}
+                            onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, name: e.target.value })}
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        </div>
+                        <div>
+                        <label htmlFor="new_client_email" className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            id="new_client_email"
+                            value={newAppointmentFormData.email}
+                            onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, email: e.target.value })}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        </div>
+                        <div>
+                        <label htmlFor="new_client_phone" className="block text-sm font-medium text-gray-700">Phone</label>
+                        <input
+                            type="tel"
+                            id="new_client_phone"
+                            value={newAppointmentFormData.phone}
+                            onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, phone: e.target.value })}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        </div>
+                        <div>
+                        <label htmlFor="new_client_telegram" className="block text-sm font-medium text-gray-700">Telegram ID</label>
+                        <input
+                            type="text"
+                            id="new_client_telegram"
+                            value={newAppointmentFormData.telegram_id}
+                            onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, telegram_id: e.target.value })}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        </div>
+                        <div className="md:col-span-2">
+                        <label htmlFor="new_client_address" className="block text-sm font-medium text-gray-700">Address</label>
+                        <input
+                            type="text"
+                            id="new_client_address"
+                            value={newAppointmentFormData.address}
+                            onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, address: e.target.value })}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        </div>
+                    </>
+                    )}
+
+                {/* Client Info Display (when existing client is selected) */}
+                {!showNewClientForm && newAppointmentFormData.client_id && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Name</label>
+                      <input
+                        type="text"
+                        value={newAppointmentFormData.name}
+                        readOnly
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <input
+                        type="text"
+                        value={newAppointmentFormData.email}
+                        readOnly
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Phone</label>
+                      <input
+                        type="text"
+                        value={newAppointmentFormData.phone}
+                        readOnly
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Telegram ID</label>
+                      <input
+                        type="text"
+                        value={newAppointmentFormData.telegram_id}
+                        readOnly
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700">Address</label>
+                      <input
+                        type="text"
+                        value={newAppointmentFormData.address}
+                        readOnly
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Appointment Details */}
                 <div>
                   <label htmlFor="service_id" className="block text-sm font-medium text-gray-700">Service</label>
                   <select
@@ -584,34 +867,19 @@ const ViewAppointment = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={newAppointmentFormData.phone}
-                    onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, phone: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={newAppointmentFormData.location}
-                    onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, location: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
                   <label htmlFor="branch_name" className="block text-sm font-medium text-gray-700">Branch</label>
                   <select
                     id="branch_name"
                     name="branch_name"
                     value={newAppointmentFormData.branch_name}
-                    onChange={(e) => setNewAppointmentFormData({ ...newAppointmentFormData, branch_name: e.target.value })}
+                    onChange={(e) => {
+                      const selectedBranch = availableBranches.find(branch => branch.branch_name === e.target.value);
+                      setNewAppointmentFormData({ 
+                        ...newAppointmentFormData, 
+                        branch_name: e.target.value,
+                        location: selectedBranch ? selectedBranch.location : ''
+                      });
+                    }}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select a branch</option>
@@ -621,6 +889,17 @@ const ViewAppointment = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={newAppointmentFormData.location}
+                    readOnly
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+                  />
                 </div>
               </div>
 
@@ -640,11 +919,17 @@ const ViewAppointment = () => {
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={newAppointmentLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {newAppointmentLoading ? 'Saving...' : 'Save Appointment'}
+                    type="submit"
+                    disabled={newAppointmentLoading || 
+                        (showNewClientForm && !newAppointmentFormData.name) || // Require name for new clients
+                        !newAppointmentFormData.service_id ||
+                        !newAppointmentFormData.date ||
+                        !newAppointmentFormData.start_time ||
+                        !newAppointmentFormData.end_time
+                    }
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                    {newAppointmentLoading ? 'Saving...' : 'Save Appointment'}
                 </button>
               </div>
             </form>

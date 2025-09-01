@@ -8,24 +8,31 @@ import Header from '../../components/Header';
 import AddAppointment from './AddAppointment';
 import UpdateInformation from './UpdateInformation';
 import ViewTransactions from './ViewTransactions';
+import { useCustomization } from '../../context/CustomizationContext';
 
 const CompanyLayout = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { customization } = useCustomization();
+
+  // Apply the customized colors to the layout
+  const layoutStyle = {
+    backgroundColor: customization.theme_background,
+    color: customization.theme_text,
+  };
 
   const renderContent = () => {
     switch (activeTab) {
-        case 'Dashboard':
-            return <Dashboard />;
-        case 'View Appointment':
-            return <ViewAppointment />;
-        case 'Add Appointment':
-            return <AddAppointment />;
-        case 'Update Information':
-            return <UpdateInformation />;
-        case 'View Transaction':
-            return <ViewTransactions />;
-      // Add cases for other tabs as needed
+      case 'Dashboard':
+        return <Dashboard />;
+      case 'View Appointment':
+        return <ViewAppointment />;
+      case 'Add Appointment':
+        return <AddAppointment />;
+      case 'Update Information':
+        return <UpdateInformation />;
+      case 'View Transaction':
+        return <ViewTransactions />;
       default:
         return <Dashboard />;
     }
@@ -35,7 +42,7 @@ const CompanyLayout = () => {
   const mainContentPadding = isCollapsed ? 'md:pl-20' : 'md:pl-64';
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={layoutStyle}>
       {/* Pass the activeTab state and setter to the sidebar */}
       <DesktopSidebar 
         setActiveTab={setActiveTab} 
@@ -43,11 +50,17 @@ const CompanyLayout = () => {
         setIsCollapsed={setIsCollapsed}
         activeTab={activeTab}
       />
-      <MobileSidebar setActiveTab={setActiveTab} />
+      
+      <MobileSidebar 
+        setActiveTab={setActiveTab} 
+        activeTab={activeTab}
+      />
 
       <div className={`flex-1 flex flex-col ${mainContentPadding}`}>
-        <Header isCollapsed={isCollapsed} />
-        <main className="flex-1 p-8 bg-gray-100 mt-16">
+        <Header 
+          isCollapsed={isCollapsed} 
+        />
+        <main className="flex-1 p-8 mt-16" style={{ backgroundColor: customization.theme_background }}>
           {renderContent()}
         </main>
       </div>

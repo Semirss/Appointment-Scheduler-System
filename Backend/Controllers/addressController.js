@@ -3,7 +3,7 @@ import {
   getAddressesByCompanyModel,
   addAddressModel,
   updateAddressModel,
-  deleteAddressModel
+  deleteAddressModel,
 } from "../Models/addressModel.js";
 
 export const getAddresses = async (req, res) => {
@@ -29,6 +29,7 @@ export const getCompanyAddresses = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch addresses" });
   }
 };
+
 
 export const addAddress = async (req, res) => {
   try {

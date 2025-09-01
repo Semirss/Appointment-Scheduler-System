@@ -30,7 +30,17 @@ export const loginCompany = async (req, res) => {
     // );
 
     // res.status(200).json({ success: true, token });
-    res.status(200).json({ success: true, message: "Login successful" });
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        company_id: company.company_id,
+        name: company.name,
+        phone: company.phone,
+        category: company.category
+        // token // optionally include token here
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Login failed" });
   }
