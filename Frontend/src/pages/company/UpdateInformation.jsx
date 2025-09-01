@@ -20,6 +20,24 @@ const UpdateInformation = () => {
     '#F8FAFC', '#F1F5F9', '#E2E8F0'
   ];
 
+   const fontOptions = [
+    { name: 'Inter', value: 'Inter' },
+    { name: 'Roboto', value: 'Roboto' },
+    { name: 'Open Sans', value: 'Open Sans' },
+    { name: 'Montserrat', value: 'Montserrat' },
+    { name: 'Poppins', value: 'Poppins' },
+    { name: 'Lato', value: 'Lato' },
+    { name: 'Nunito', value: 'Nunito' },
+    { name: 'Source Sans Pro', value: 'Source Sans Pro' },
+  ];
+
+  const fontSizeOptions = [
+    { name: 'Small', value: '14px' },
+    { name: 'Medium', value: '16px' },
+    { name: 'Large', value: '18px' },
+    { name: 'X-Large', value: '20px' },
+  ];
+
   // Load initial data
   useEffect(() => {
     setPreviewLogo(customization.logo_url);
@@ -362,7 +380,55 @@ const UpdateInformation = () => {
               </p>
             </div> */}
           </div>
+            <div className="md:col-span-2">
+                <h3 className="text-md font-medium mb-3">Font Settings</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 rounded border" style={{ borderColor: `${customization.theme_button}20` }}>
+                    <div className="w-8 h-8 rounded border flex items-center justify-center" style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontFamily: customization.font_family
+                    }}>
+                        Aa
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium">Body Font</p>
+                        <p className="text-xs opacity-70" style={{ fontFamily: customization.font_family }}>
+                        {customization.font_family}
+                        </p>
+                    </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 rounded border" style={{ borderColor: `${customization.theme_button}20` }}>
+                    <div className="w-8 h-8 rounded border flex items-center justify-center" style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontFamily: customization.font_heading
+                    }}>
+                        Aa
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium">Heading Font</p>
+                        <p className="text-xs opacity-70" style={{ fontFamily: customization.font_heading }}>
+                        {customization.font_heading}
+                        </p>
+                    </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 rounded border" style={{ borderColor: `${customization.theme_button}20` }}>
+                    <div className="w-8 h-8 rounded border flex items-center justify-center text-xs" style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontSize: customization.font_size_base
+                    }}>
+                        A
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium">Base Size</p>
+                        <p className="text-xs opacity-70">{customization.font_size_base}</p>
+                    </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        
 
         {/* Customization Form */}
         <div className="rounded-lg shadow-sm p-6 relative" style={{ backgroundColor: customization.theme_card }}>
@@ -657,6 +723,91 @@ const UpdateInformation = () => {
                   />
                 </label>
               </div>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium mb-3">
+                    Font Settings
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Body Font Selector */}
+                    <div>
+                    <label className="block text-xs opacity-70 mb-2">Body Font</label>
+                    <select
+                        value={customization.font_family}
+                        onChange={(e) => handleInputChange({
+                        target: {
+                            name: 'font_family',
+                            value: e.target.value
+                        }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontFamily: customization.font_family
+                        }}
+                        disabled={isLocked}
+                    >
+                        {fontOptions.map(font => (
+                        <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                            {font.name}
+                        </option>
+                        ))}
+                    </select>
+                    </div>
+                    
+                    {/* Heading Font Selector */}
+                    <div>
+                    <label className="block text-xs opacity-70 mb-2">Heading Font</label>
+                    <select
+                        value={customization.font_heading}
+                        onChange={(e) => handleInputChange({
+                        target: {
+                            name: 'font_heading',
+                            value: e.target.value
+                        }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontFamily: customization.font_heading
+                        }}
+                        disabled={isLocked}
+                    >
+                        {fontOptions.map(font => (
+                        <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                            {font.name}
+                        </option>
+                        ))}
+                    </select>
+                    </div>
+                    
+                    {/* Font Size Selector */}
+                    <div>
+                    <label className="block text-xs opacity-70 mb-2">Base Font Size</label>
+                    <select
+                        value={customization.font_size_base}
+                        onChange={(e) => handleInputChange({
+                        target: {
+                            name: 'font_size_base',
+                            value: e.target.value
+                        }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                        borderColor: `${customization.theme_button}20`,
+                        fontSize: customization.font_size_base
+                        }}
+                        disabled={isLocked}
+                    >
+                        {fontSizeOptions.map(size => (
+                        <option key={size.value} value={size.value}>
+                            {size.name} ({size.value})
+                        </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
             </div>
 
             {/* Description */}

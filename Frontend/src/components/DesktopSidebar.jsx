@@ -2,13 +2,13 @@ import React from 'react';
 import { FaTh, FaCalendarAlt, FaPlus, FaUserEdit, FaExchangeAlt, FaBars, FaChevronLeft } from 'react-icons/fa';
 import { useCustomization } from '../context/CustomizationContext';
 import { useCompany } from '../context/CompanyContext';
-;
+
 
 const navItems = [
   { name: 'Dashboard', icon: <FaTh /> },
   { name: 'View Appointment', icon: <FaCalendarAlt /> },
-  { name: 'Add Appointment', icon: <FaPlus /> },
-  { name: 'Update Customization', icon: <FaUserEdit /> },
+  { name: 'Add Service', icon: <FaPlus /> },
+  { name: 'Update Information', icon: <FaUserEdit /> },
   { name: 'View Transaction', icon: <FaExchangeAlt /> },
 ];
 
@@ -19,8 +19,15 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
   const sidebarStyle = {
     backgroundColor: customization.sidebar_bg,
     color: customization.sidebar_text,
-    borderRight: `1px solid ${customization.theme_button}20`
+    borderRight: `1px solid ${customization.theme_button}20`,
+    // fontFamily: customization.font_family,
+    // fontSize: customization.font_size_base,
   };
+
+  const fontStyle = {
+    fontFamily: customization.font_family,
+    fontSize: customization.font_size_base,
+  }
 
   const activeItemStyle = {
     backgroundColor: `${customization.theme_button}20`,
@@ -43,7 +50,7 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
       {/* Header */}
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 border-b`} style={{ borderColor: `${customization.theme_button}20` }}>
         {!isCollapsed && (
-          <span className="text-sm font-bold tracking-wide">
+          <span className="text-sm font-bold tracking-wide" style={fontStyle}>
             {company}
           </span>
         )}
@@ -88,7 +95,7 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
               {item.icon}
             </div>
             {!isCollapsed && (
-              <span className="text-sm tracking-wide">{item.name}</span>
+              <span className="text-sm tracking-wide" style={fontStyle}>{item.name}</span>
             )}
           </div>
         ))}
@@ -97,7 +104,7 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
       {/* Footer (optional) */}
       {!isCollapsed && (
         <div className="p-4 border-t text-xs text-center" style={{ borderColor: `${customization.theme_button}20`, color: customization.sidebar_text }}>
-          © 2025 Gravity Technology. All Rights Reserved.
+          <p style={fontStyle}>© 2025 Gravity Technology. All Rights Reserved.</p>
         </div>
       )}
     </div>

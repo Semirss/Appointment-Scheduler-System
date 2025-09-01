@@ -9,12 +9,16 @@ import AdminCustomization from './pages/admin/AdminCustomization';
 // import EnhancedAdmin from './pages/admin/EnhancedAdmin';
 // import Login from './pages/admin/AdminLogin';
 import { CompanyProvider } from './context/CompanyContext';
+import GlobalStyles from './components/GlobalStyles';
+import FontLoader from './components/FontLoader';
 
 function App() {
   // console.log(UserProvider);
   return (
     <CustomizationProvider>
       <CompanyProvider>
+        <GlobalStyles />
+        <FontLoader />
         <Router>
           <Routes>
             <Route path='/login' element={<CompanyLogin />}></Route>
