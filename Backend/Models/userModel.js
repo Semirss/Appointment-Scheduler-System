@@ -13,25 +13,28 @@ const getUserByIdModel = async (id) => {
   const [result] = await mySqlConnection.query(sql, [id]);
   return result[0]; // Return single user object
 };
-
+const getUserByEmailModel = async (email) => {
+  const sql = `SELECT user_id, name, email, phone, telegram_id, created_at FROM users WHERE email = ?`;
+  const [result] = await mySqlConnection.query(sql, [email]);
+  return result[0];
+};
 const addUserModel = async (data) => {
   const sql = `
-    INSERT INTO users (name, email, phone, telegram_id, address)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO users (name, email, phone, telegram_id)
+    VALUES (?, ?, ?, ?)
   `;
-  await mySqlConnection.query(sql, [
+  const [result] = await mySqlConnection.query(sql, [
     data.name,
     data.email,
-    data.phone,
-    data.telegram_id,
-    data.address
+    data.phone || null,
+    data.telegram_id || null
   ]);
+  return result;
 };
-
-
 
 export {
   getAllUsersModel,
+  getUserByEmailModel,
   getUserByIdModel,
   addUserModel
 };
