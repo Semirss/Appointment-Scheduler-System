@@ -14,49 +14,23 @@ const getUserByIdModel = async (id) => {
   return result[0]; // Return single user object
 };
 
-const findOrCreateUserById = async ({ client_id, name, email, phone, telegram_id, address }) => {
-  const lookupSql = `SELECT user_id FROM users WHERE user_id = ? LIMIT 1`;
-  const [rows] = await mySqlConnection.query(lookupSql, [client_id]);
-
-  if (rows.length > 0) {
-    return client_id; // User exists
-  }
-
-  const insertSql = `
-    INSERT INTO users (user_id, name, email, phone, telegram_id, address)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-  const [result] = await mySqlConnection.query(insertSql, [
-    client_id,
-    name,
-    email,
-    phone,
-    telegram_id,
-    address
-  ]);
-
-  return client_id; // Return the same ID after creation
-};
-
-
 const addUserModel = async (data) => {
   const sql = `
-    INSERT INTO users (name, email, phone, telegram_id, address)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO users (name, email, phone, telegram_id)
+    VALUES (?, ?, ?, ?)
   `;
-  await mySqlConnection.query(sql, [
+  const [result] = await mySqlConnection.query(sql, [
     data.name,
     data.email,
-    data.phone,
-    data.telegram_id,
-    data.address
+    data.phone || null,
+    data.telegram_id || null
   ]);
+  return result;
 };
-
-
 
 export {
   getAllUsersModel,
+  getUserByEmailModel,
   getUserByIdModel,
   findOrCreateUserById,
   addUserModel
