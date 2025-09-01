@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import {
   BarChart3,
@@ -25,15 +24,17 @@ import {
   X,
   MoreHorizontal,
   LogOut,
-  User
+  User,
+  Save,
+  XCircle
 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { useNavigate } from "react-router-dom" // Add this import
+import { useNavigate } from "react-router-dom"
 
-const CompaniesRegistrationChart = ({ companies = [] }) => {
+const CompaniesRegistrationChart = ({ companies = [], appointments = [] }) => {
   // Generate chart data based on companies registration dates
   const chartData = React.useMemo(() => {
-    if (!companies.length) return []
+    if (!companies.length && !appointments.length) return []
 
     // Group companies by month for the last 6 months
     const months = []
@@ -93,10 +94,11 @@ const EnhancedAdmin = () => {
   const [appointments, setAppointments] = useState([])
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
   const [recentActivities, setRecentActivities] = useState([])
-    const [adminData, setAdminData] = useState(null) // Add admin data state
-  const navigate = useNavigate() // Add navigate hook
+  const [adminData, setAdminData] = useState(null)
+  const [editingCompanyId, setEditingCompanyId] = useState(null) // Changed to track ID only
+  const navigate = useNavigate()
 
-// Get admin data from storage on component mount
+  // Get admin data from storage on component mount
   useEffect(() => {
     const storedAdmin = localStorage.getItem('admin') || sessionStorage.getItem('admin')
     if (storedAdmin) {
@@ -113,6 +115,7 @@ const EnhancedAdmin = () => {
     sessionStorage.removeItem('admin')
     navigate('/login')
   }
+
   const fetchCompanies = async () => {
     try {
       setIsLoadingCompanies(true)
@@ -128,7 +131,9 @@ const EnhancedAdmin = () => {
 
       if (result.success) {
         setCompanies(result.data)
-        updateRecentActivities("company", result.data[result.data.length - 1]?.name)
+        if (result.data.length > 0) {
+          updateRecentActivities("company", result.data[result.data.length - 1]?.name)
+        }
       } else {
         throw new Error(result.message || "Failed to fetch companies")
       }
@@ -167,9 +172,49 @@ const EnhancedAdmin = () => {
     }
   }
 
-  const handleEditCompany = async (companyId) => {
-    console.log("Edit company:", companyId)
-    // TODO: Implement edit functionality
+  const handleEditCompany = (companyId) => {
+    setEditingCompanyId(companyId)
+  }
+
+  const handleSaveCompany = async (companyId, updatedData) => {
+    try {
+      // Remove password field if it's empty to avoid hashing empty string
+      if (!updatedData.password) {
+        delete updatedData.password
+      }
+      
+      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Server response:", errorText)
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Refresh companies list
+        fetchCompanies()
+        setEditingCompanyId(null)
+        updateRecentActivities("company_updated", updatedData.name)
+      } else {
+        throw new Error(result.message || "Failed to update company")
+      }
+    } catch (error) {
+      console.error("Error updating company:", error)
+      alert("Failed to update company: " + error.message)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCompanyId(null)
   }
 
   const handleDeleteCompany = async (companyId) => {
@@ -181,6 +226,8 @@ const EnhancedAdmin = () => {
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Server response:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
@@ -249,6 +296,15 @@ const EnhancedAdmin = () => {
         color: "bg-red-500",
         timestamp: now,
       }
+    } else if (type === "company_updated" && data) {
+      newActivity = {
+        title: "Company updated",
+        description: `${data} information was updated`,
+        time: "Just now",
+        icon: Edit,
+        color: "bg-blue-500",
+        timestamp: now,
+      }
     }
 
     if (Object.keys(newActivity).length > 0) {
@@ -305,6 +361,9 @@ const EnhancedAdmin = () => {
             onEdit={handleEditCompany}
             onDelete={handleDeleteCompany}
             onView={handleViewCompany}
+            editingCompanyId={editingCompanyId}
+            onSave={handleSaveCompany}
+            onCancelEdit={handleCancelEdit}
           />
         )
       case "template":
@@ -380,22 +439,22 @@ const EnhancedAdmin = () => {
           </nav>
         </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-  <div className="flex items-center space-x-3">
-    <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-      <span className="text-xs font-bold text-white">
-        {adminData ? adminData.initials : "AD"}
-      </span>
-    </div>
-    <div>
-      <p className="text-sm font-medium text-foreground">Admin User</p>
-      <p className="text-xs text-muted-foreground">
-        {adminData ? adminData.email : "admin@company.com"}
-      </p>
-    </div>
-  </div>
-</div>
-</div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+              <span className="text-xs font-bold text-white">
+                {adminData ? adminData.initials : "AD"}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Admin User</p>
+              <p className="text-xs text-muted-foreground">
+                {adminData ? adminData.email : "admin@company.com"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="lg:ml-64">
@@ -427,8 +486,6 @@ const EnhancedAdmin = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-            
-
               <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
                 <Bell className="w-5 h-5 text-muted-foreground" />
                 {notificationCount > 0 && (
@@ -438,27 +495,24 @@ const EnhancedAdmin = () => {
                 )}
               </button>
               {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors group"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
-            </button>
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
+              </button>
 
-            {/* Admin Profile */}
-            {adminData && (
-              <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary hover:scale-110 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">
-                    {adminData.initials || <User className="w-4 h-4" />}
-                  </span>
+              {/* Admin Profile */}
+              {adminData && (
+                <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
+                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary hover:scale-110 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">
+                      {adminData.initials || <User className="w-4 h-4" />}
+                    </span>
+                  </div>
                 </div>
-               
-              </div>
-            )}
-          
-        
+              )}
             </div>
           </div>
         </header>
@@ -653,31 +707,7 @@ const ModernDashboardView = ({
 
       {appointments.length > 0 && (
         <div className="bg-card rounded-xl p-4 border border-border hover-lift">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Recent Appointments</h3>
-              <p className="text-sm text-muted-foreground">Latest bookings from database</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {appointments.slice(0, 6).map((appointment, index) => (
-              <div
-                key={appointment.id || index}
-                className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">#{appointment.id}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {appointment.appointment_date
-                      ? new Date(appointment.appointment_date).toLocaleDateString()
-                      : "No date"}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">{appointment.company_name || "Unknown Company"}</p>
-                <p className="text-xs text-muted-foreground">{appointment.client_name || "No client name"}</p>
-              </div>
-            ))}
-          </div>
+          {/* Appointments content */}
         </div>
       )}
     </div>
@@ -755,10 +785,10 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
       setSuccessMessage(result.message || "Company added successfully!")
       setFormData({
         name: "",
-        email: "",
-        phone: "",
-        category: "",
-        password: "",
+    email: "",
+    phone: "",
+    category: "",
+    password: "",
       })
 
       if (onCompanyAdded) {
@@ -777,25 +807,6 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     }
   }
 
-  // Update the test connection function to test the actual API endpoint
-  const testServerConnection = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/companies", {
-        method: "OPTIONS", // Test with OPTIONS to check CORS
-      })
-      console.log("OPTIONS test response status:", response.status)
-
-      if (response.status === 204 || response.status === 200) {
-        console.log("CORS preflight is working!")
-        setErrors({ submit: "CORS preflight is working! You can now submit the form." })
-      } else {
-        setErrors({ submit: `CORS preflight test failed with status: ${response.status}` })
-      }
-    } catch (error) {
-      console.error("CORS test failed:", error)
-      setErrors({ submit: "CORS preflight failed. Please check your backend CORS configuration." })
-    }
-  }
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-card rounded-2xl border border-border overflow-hidden hover-lift">
@@ -813,14 +824,6 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
             <div className="flex items-center">
               <AlertCircle className="w-5 h-5 text-destructive mr-3" />
               <p className="text-destructive font-medium">{errors.submit}</p>
-            </div>
-            <div className="mt-3">
-              <button
-                onClick={testServerConnection}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
-              >
-                Test Server Connection
-              </button>
             </div>
             <p className="text-sm text-destructive mt-2">
               Expected JSON structure:
@@ -1238,7 +1241,7 @@ const ModernTemplateForm = () => {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-border">
+              <div className="flex flex-col sm:flexRow justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-border">
                 <button
                   type="button"
                   className="px-6 py-3 border border-border text-foreground bg-background hover:bg-muted rounded-xl font-medium transition-colors"
@@ -1343,12 +1346,36 @@ const ModernViewCompaniesList = ({
   onEdit = () => {},
   onDelete = () => {},
   onView = () => {},
+  editingCompanyId = null,
+  onSave = () => {},
+  onCancelEdit = () => {},
 }) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState("asc")
+  const [editFormData, setEditFormData] = useState({})
+
+  useEffect(() => {
+    if (editingCompanyId) {
+      const companyToEdit = companies.find(c => c.company_id === editingCompanyId)
+      if (companyToEdit) {
+        setEditFormData({...companyToEdit})
+      }
+    }
+  }, [editingCompanyId, companies])
+
+  const handleEditChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleSaveClick = (companyId) => {
+    onSave(companyId, editFormData)
+  }
 
   const filteredCompanies = companies
     .filter((company) => {
@@ -1402,8 +1429,8 @@ const ModernViewCompaniesList = ({
   return (
     <div className="space-y-6">
       {/* Filters and Search */}
-      <div className="bg-card rounded-2xl border border-border p-4 hover-lift">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      <div className="bg-card rounded-2xl border border-border p-4 hover-lift ">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-end space-y-4 lg:space-y-0">
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1415,16 +1442,6 @@ const ModernViewCompaniesList = ({
                 className="pl-10 pr-4 py-2 w-full sm:w-64 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               />
             </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Awaiting Setup">Awaiting Setup</option>
-            </select>
 
             <select
               value={categoryFilter}
@@ -1439,16 +1456,6 @@ const ModernViewCompaniesList = ({
               ))}
             </select>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
-              <Plus className="w-4 h-4" />
-              <span>Add Company</span>
-            </button>
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Download className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -1457,78 +1464,178 @@ const ModernViewCompaniesList = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCompanies.map((company, index) => (
             <div
-              key={company.id || index}
+              key={company.company_id || index}
               className="bg-card rounded-2xl border border-border p-4 hover-lift animate-slide-in-up"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">
-                      {company.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </span>
+              {editingCompanyId === company.company_id ? (
+                // Edit Mode
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">
+                          {company.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </span>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={editFormData.name || ""}
+                          onChange={(e) => handleEditChange('name', e.target.value)}
+                          className="text-lg font-semibold text-foreground bg-input border border-border rounded px-2 py-1"
+                        />
+                        <select
+                          value={editFormData.category || ""}
+                          onChange={(e) => handleEditChange('category', e.target.value)}
+                          className="text-sm text-muted-foreground bg-input border border-border rounded px-2 py-1 mt-1"
+                        >
+                          <option value="">Select category</option>
+                          <option value="Technology">Technology</option>
+                          <option value="Healthcare">Healthcare</option>
+                          <option value="Finance">Finance</option>
+                          <option value="Retail">Retail</option>
+                          <option value="Education">Education</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <select
+                      value={editFormData.status || ""}
+                      onChange={(e) => handleEditChange('status', e.target.value)}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        editFormData.status === "Active"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      }`}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">{company.name}</h3>
-                    <p className="text-sm text-muted-foreground">{company.category || "No category"}</p>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Email:</span>
+                      <input
+                        type="email"
+                        value={editFormData.email || ""}
+                        onChange={(e) => handleEditChange('email', e.target.value)}
+                        className="ml-2 bg-input border border-border rounded px-2 py-1 flex-1"
+                      />
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Phone:</span>
+                      <input
+                        type="text"
+                        value={editFormData.phone || ""}
+                        onChange={(e) => handleEditChange('phone', e.target.value)}
+                        className="ml-2 bg-input border border-border rounded px-2 py-1 flex-1"
+                      />
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Appointments:</span>
+                      <span className="ml-2 font-semibold text-primary">{getCompanyAppointmentCount(company.name)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleSaveClick(company.company_id)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                        title="Save Changes"
+                      >
+                        <Save className="w-4 h-4 text-muted-foreground group-hover:text-green-600" />
+                      </button>
+                      <button
+                        onClick={onCancelEdit}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                        title="Cancel Edit"
+                      >
+                        <XCircle className="w-4 h-4 text-muted-foreground group-hover:text-red-600" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">ID: {company.company_id}</p>
                   </div>
                 </div>
-                <div
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    company.status === "Active"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                  }`}
-                >
-                  {company.status || "Unknown"}
-                </div>
-              </div>
+              ) : (
+                // View Mode
+                <>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">
+                          {company.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">{company.name}</h3>
+                        <p className="text-sm text-muted-foreground">{company.category || "No category"}</p>
+                      </div>
+                    </div>
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        company.status === "Active"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      }`}
+                    >
+                      {company.status || "Unknown"}
+                    </div>
+                  </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <span className="font-medium">Email:</span>
-                  <span className="ml-2">{company.email || "No email"}</span>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <span className="font-medium">Phone:</span>
-                  <span className="ml-2">{company.phone || "No phone"}</span>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <span className="font-medium">Appointments:</span>
-                  <span className="ml-2 font-semibold text-primary">{getCompanyAppointmentCount(company.name)}</span>
-                </div>
-              </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Email:</span>
+                      <span className="ml-2">{company.email || "No email"}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Phone:</span>
+                      <span className="ml-2">{company.phone || "No phone"}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="font-medium">Appointments:</span>
+                      <span className="ml-2 font-semibold text-primary">{getCompanyAppointmentCount(company.name)}</span>
+                    </div>
+                  </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onView(company.id)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                  </button>
-                  <button
-                    onClick={() => onEdit(company.id)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                    title="Edit Company"
-                  >
-                    <Edit className="w-4 h-4 text-muted-foreground group-hover:text-blue-600" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(company.id)}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                    title="Delete Company"
-                  >
-                    <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-600" />
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">ID: {company.id}</p>
-              </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => onView(company.company_id)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                      </button>
+                      <button
+                        onClick={() => onEdit(company.company_id)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                        title="Edit Company"
+                      >
+                        <Edit className="w-4 h-4 text-muted-foreground group-hover:text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(company.company_id)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                        title="Delete Company"
+                      >
+                        <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-600" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">ID: {company.company_id}</p>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -1544,36 +1651,5 @@ const ModernViewCompaniesList = ({
     </div>
   )
 }
-
-const recentActivities = [
-  {
-    title: "New company registered",
-    description: "Innovate Solutions joined the platform",
-    time: "2 minutes ago",
-    icon: Building2,
-    color: "bg-chart-1",
-  },
-  {
-    title: "Appointment scheduled",
-    description: "Urban Fitness Co. has a new booking",
-    time: "15 minutes ago",
-    icon: Calendar,
-    color: "bg-chart-2",
-  },
-  {
-    title: "Payment received",
-    description: "$299.99 from Apex Logistics",
-    time: "1 hour ago",
-    icon: DollarSign,
-    color: "bg-chart-3",
-  },
-  {
-    title: "System update",
-    description: "Database backup completed successfully",
-    time: "2 hours ago",
-    icon: CheckCircle,
-    color: "bg-chart-4",
-  },
-]
 
 export default EnhancedAdmin
