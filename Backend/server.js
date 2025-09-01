@@ -4,9 +4,8 @@ import mySqlConnection from './Config/db.js';
 import router from './Routes/route.js';
 import bcrypt from 'bcrypt';
 // import adminRouter from './routes/adminRoute.js';
-import cors from 'cors';
 // import cookieParser from 'cookie-parser';
-
+import cors from 'cors'; 
 dotenv.config();
 
 const port = process.env.PORT || 5000;
