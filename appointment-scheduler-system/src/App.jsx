@@ -22,7 +22,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         
         {/* Login route */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<AppointmentBooking />} />
         
         {/* Protected route - only accessible when authenticated */}
         <Route 
