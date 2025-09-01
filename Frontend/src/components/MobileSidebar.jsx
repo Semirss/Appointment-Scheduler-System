@@ -6,7 +6,7 @@ const navItems = [
   { name: 'Dashboard', icon: <FaTh /> },
   { name: 'View Appointment', icon: <FaCalendarAlt /> },
   { name: 'Add Appointment', icon: <FaPlus /> },
-  { name: 'Update Information', icon: <FaUserEdit /> },
+  { name: 'Update Customization', icon: <FaUserEdit /> },
   { name: 'View Transaction', icon: <FaExchangeAlt /> },
 ];
 

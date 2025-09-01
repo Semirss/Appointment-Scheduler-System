@@ -1,17 +1,20 @@
 import React from 'react';
 import { FaTh, FaCalendarAlt, FaPlus, FaUserEdit, FaExchangeAlt, FaBars, FaChevronLeft } from 'react-icons/fa';
 import { useCustomization } from '../context/CustomizationContext';
+import { useCompany } from '../context/CompanyContext';
+;
 
 const navItems = [
   { name: 'Dashboard', icon: <FaTh /> },
   { name: 'View Appointment', icon: <FaCalendarAlt /> },
   { name: 'Add Appointment', icon: <FaPlus /> },
-  { name: 'Update Information', icon: <FaUserEdit /> },
+  { name: 'Update Customization', icon: <FaUserEdit /> },
   { name: 'View Transaction', icon: <FaExchangeAlt /> },
 ];
 
 const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }) => {
   const { customization } = useCustomization();
+  const { company } = useCompany();
 
   const sidebarStyle = {
     backgroundColor: customization.sidebar_bg,
@@ -40,8 +43,8 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
       {/* Header */}
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 border-b`} style={{ borderColor: `${customization.theme_button}20` }}>
         {!isCollapsed && (
-          <span className="text-xl font-bold tracking-wide">
-            Kati
+          <span className="text-sm font-bold tracking-wide">
+            {company}
           </span>
         )}
         <button 

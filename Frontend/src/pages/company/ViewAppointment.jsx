@@ -557,13 +557,13 @@ const ViewAppointment = () => {
                   >
                     Reschedule
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => handleRequestRating(appointment)} 
                     className="flex-1 py-2 px-3 bg-green-500 text-white rounded text-sm font-medium hover:bg-green-600 transition-colors"
                     style={buttonStyle}
                   >
                     Request Rating
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))

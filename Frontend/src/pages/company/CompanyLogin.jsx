@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useCompany } from '../../context/CompanyContext';
 
 const CompanyLogin = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const CompanyLogin = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setCompany } = useCompany();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,6 +27,8 @@ const CompanyLogin = () => {
     try {
       const response = await axios.post('http://localhost:5000/api/companyLogin', formData);
       setSuccess('Login successful! Welcome back.');
+      console.log(response.data.data.name)
+      setCompany(response.data.data.name);
       navigate('/');
       console.log(response.data);
     } catch (err) {

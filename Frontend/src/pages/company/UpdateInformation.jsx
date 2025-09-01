@@ -150,7 +150,7 @@ const UpdateInformation = () => {
                   className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   <FaPaperPlane />
-                  {requestSent ? 'Request Sent!' : 'Request Access from Admin'}
+                  {requestSent ? 'Request Sent!' : 'Request Access'}
                 </button>
                 {requestSent && (
                   <p className="text-green-600 mt-2 text-sm">
@@ -726,8 +726,8 @@ const UpdateInformation = () => {
         }}>
           <h4 className="font-semibold mb-2">Need Help?</h4>
           <p className="text-sm">
-            Contact your system administrator at <span className="font-medium">admin@company.com</span> 
-            or call <span className="font-medium">+1 (555) 123-ADMIN</span> for customization access.
+            Contact us <span className="font-medium">  info@gravityet.com </span> 
+            or call <span className="font-medium">+251 910 446 666</span> for customization access.
           </p>
         </div>
       </div>
