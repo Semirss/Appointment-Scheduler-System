@@ -13,6 +13,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { useCustomization } from '../../context/CustomizationContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -44,17 +45,55 @@ const getStatusColor = (status) => {
 };
 
 const Dashboard = () => {
+  const { customization } = useCustomization(); // Get customization data
   const [users, setUsers] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Apply the customized colors
+  const containerStyle = {
+    backgroundColor: customization.theme_background,
+    color: customization.theme_text,
+  };
+
+//   const cardStyle = {
+//     backgroundColor: customization.theme_background,
+//     color: customization.theme_text,
+//     border: `1px solid ${customization.theme_button}20`
+//   };
+
+  const buttonStyle = {
+    backgroundColor: customization.theme_button,
+    color: getContrastColor(customization.theme_button),
+  };
+  
+  const cardStyle = {
+    backgroundColor: customization.theme_card,
+    color: customization.theme_text,
+    border: `1px solid ${customization.theme_button}20`
+    };
+
+  // Helper function to determine text color based on background
+  function getContrastColor(hexColor) {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black or white depending on luminance
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  }
 
   // Appointee ID can be a prop, a context variable, or a constant
   const appointeeId = 2;
 
   useEffect(() => {
     fetchDashboardData();
-  }, [appointeeId]);
+  }, [appointeeId]); // Added appointeeId to the dependency array
 
   const fetchDashboardData = async () => {
     try {
@@ -63,10 +102,12 @@ const Dashboard = () => {
       // Fetch all data in parallel
       const [usersResponse, appointmentsResponse, ratingsResponse] = await Promise.all([
         axios.get('http://localhost:5000/api/users'),
-        axios.get(`http://localhost:5000/api/appointments/appointees/${appointeeId}`),
+        axios.get(`http://localhost:5000/api/appointments/appointees/${appointeeId}`), // Use template literal for dynamic ID
         axios.get('http://localhost:5000/api/ratings')
       ]);
 
+      // Correctly access the nested data array from the response object
+      // The data array is inside the 'data' property of the response
       setUsers(usersResponse.data.data || []);
       setAppointments(appointmentsResponse.data.data || []);
       setRatings(ratingsResponse.data.data || []);
@@ -165,14 +206,14 @@ const Dashboard = () => {
       .map(apt => ({
         id: apt.appointment_id,
         dateTime: formatDateTime(apt.start_time),
-        client: apt.name || `Client #${apt.user_id}`,
-        service: apt.service_name || `Service #${apt.service_id}`,
+        client: apt.name || `Client #${apt.user_id}`, // Use the client's name from the response
+        service: apt.service_name || `Service #${apt.service_id}`, // Use the service name from the response
         referenceId: `APT-${apt.appointment_id}`,
         status: apt.status || 'Scheduled',
       }));
 
     return {
-      totalClients: users.length,
+      totalActiveClients: users.length,
       newThisMonth: newUsersThisMonth.length,
       averageRating,
       monthlyGrowth: Object.values(monthlyGrowth).map(item => item.count),
@@ -192,8 +233,8 @@ const Dashboard = () => {
       datasets: [{
         label: 'Number of Clients',
         data: stats.monthlyGrowth.length > 0 ? stats.monthlyGrowth : [0, 0, 0, 0, 0, 0, 0],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: customization.theme_button,
+        backgroundColor: `${customization.theme_button}20`, // 20% opacity
         fill: true,
         tension: 0.3,
       }]
@@ -244,12 +285,12 @@ const Dashboard = () => {
 
   // Client status chart data
   const getClientStatusData = () => {
-    const activeClients = stats.totalClients - stats.newThisMonth;
+    const activeClients = stats.totalActiveClients - stats.newThisMonth;
 
     return {
       labels: ['Active', 'New', 'Inactive'],
       datasets: [{
-        data: [activeClients, stats.newThisMonth, 0],
+        data: [activeClients, stats.newThisMonth, 0], // Inactive count would need to be calculated based on your business logic
         backgroundColor: [
           'rgba(59, 130, 246, 0.8)',
           'rgba(34, 197, 94, 0.8)',
@@ -267,33 +308,33 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex-1 min-h-screen bg-gray-50 flex items-center justify-center" style={containerStyle}>
         <div className="text-lg">Loading dashboard data...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-gray-50">
+    <div className="flex-1 min-h-screen bg-gray-50" style={containerStyle}>
       <main className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Clients Statistics */}
-        <div className="col-span-1 lg:col-span-2 bg-white rounded-xl p-6 shadow-md">
+        <div className="col-span-1 lg:col-span-2 rounded-xl p-6 shadow-md" style={cardStyle}>
           <h2 className="text-lg font-semibold mb-4">Clients</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-700">
+            <div className="p-4 rounded-lg text-center" style={{ backgroundColor: `${customization.theme_button}20` }}>
+              <div className="text-2xl font-bold" style={{ color: customization.theme_button }}>
                 {stats.totalClients}
               </div>
-              <div className="text-sm text-gray-600 mt-1">Number of Clients</div>
+              <div className="text-sm text-gray-600 mt-1">Active Clients</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-700">
+            <div className="bg-green-50 p-4 rounded-lg text-center" style={{ backgroundColor: `${customization.theme_button}20` }}>
+              <div className="text-2xl font-bold text-green-700" style={{ color: customization.theme_button }}>
                 {stats.newThisMonth}
               </div>
               <div className="text-sm text-gray-600 mt-1">New This Month</div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-700">
+            <div className="bg-purple-50 p-4 rounded-lg text-center" style={{ backgroundColor: `${customization.theme_button}20` }}>
+              <div className="text-2xl font-bold text-purple-700" style={{ color: customization.theme_button }}>
                 {stats.averageRating.toFixed(1)}%
               </div>
               <div className="text-sm text-gray-600 mt-1">Satisfaction Rate</div>
@@ -305,7 +346,7 @@ const Dashboard = () => {
         </div>
 
         {/* Appointments by Date */}
-        <div className="col-span-1 bg-white rounded-xl p-6 shadow-md">
+        <div className="col-span-1 bg-white rounded-xl p-6 shadow-md" style={cardStyle}>
           <h2 className="text-lg font-semibold mb-4">Appointments by Date</h2>
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
@@ -336,11 +377,11 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white rounded-xl p-6 shadow-md">
+        <div style={cardStyle} className="col-span-1 md:col-span-2 lg:col-span-3 bg-white rounded-xl p-6 shadow-md">
           <h2 className="text-lg font-semibold mb-4">Recent Appointments</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead style={cardStyle} className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
@@ -349,7 +390,7 @@ const Dashboard = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody style={cardStyle} className="bg-white divide-y divide-gray-200">
                 {stats.recentActivities.length > 0 ? (
                   stats.recentActivities.map((activity) => (
                     <tr key={activity.id}>

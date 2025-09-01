@@ -12,6 +12,32 @@ const getAddressesByCompanyModel = async (companyId) => {
   return result;
 };
 
+const getAddressId = async (company_id, branch_name, location) => {
+  try {
+    const sql = `
+      SELECT address_id FROM company_addresses
+      WHERE company_id = ? AND branch_name = ? AND location = ?
+      LIMIT 1
+    `;
+    
+    console.log("Querying for address with:", { company_id, branch_name, location });
+    
+    const [rows] = await mySqlConnection.query(sql, [company_id, branch_name, location]);
+    
+    console.log("Query result:", rows);
+    
+    if (rows.length > 0) {
+      return rows[0].address_id;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error getting address ID:", error);
+    return null;
+  }
+};
+
+
 const addAddressModel = async (data) => {
   const sql = `INSERT INTO company_addresses (company_id, branch_name, location) VALUES (?, ?, ?)`;
   await mySqlConnection.query(sql, [data.company_id, data.branch_name, data.location]);
@@ -29,6 +55,7 @@ const deleteAddressModel = async (id) => {
 
 export {
   getAddressesModel,
+  getAddressId,
   getAddressesByCompanyModel,
   addAddressModel,
   updateAddressModel,

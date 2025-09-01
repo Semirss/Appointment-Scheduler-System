@@ -45,7 +45,7 @@ app.listen(port, async () => {
     await mySqlConnection.query('SELECT 1');
     console.log(`Server is running on port ${port} and DB is connected`);
 
-    const plainPassword = 'admin';
+    const plainPassword = '123';
     const saltRounds = 10;
 
     bcrypt.hash(plainPassword, saltRounds, (err, hash) => {
