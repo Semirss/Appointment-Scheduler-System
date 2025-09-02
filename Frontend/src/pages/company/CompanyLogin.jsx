@@ -25,14 +25,32 @@ const CompanyLogin = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/companyLogin', formData);
+      // Step 1: Attempt to log in the company
+      const loginResponse = await axios.post('http://localhost:5000/api/companyLogin', formData);
+      console.log('Login successful:', loginResponse.data);
+
+      // Step 2: Get the subdomain from the current URL
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      let subdomain = null;
+      if (parts.length > 2) {
+        subdomain = parts[0];
+      }
+
+      // Step 3: If a subdomain exists, fetch company data using it
+      if (subdomain) {
+        const companyResponse = await axios.get(`http://localhost:5000/api/companies/subdomain/${subdomain}`);
+        const companyData = companyResponse.data.data;
+        console.log(companyData.company);
+        setCompany(companyData);
+        console.log('Fetched company data:', companyData);
+      }
+
       setSuccess('Login successful! Welcome back.');
-      console.log(response.data.data.name)
-      setCompany(response.data.data.name);
       navigate('/');
-      console.log(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login or data fetch failed:', err);
     } finally {
       setIsLoading(false);
     }
