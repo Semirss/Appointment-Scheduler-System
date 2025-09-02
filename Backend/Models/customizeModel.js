@@ -15,8 +15,8 @@ const getCustomizationByCompanyIdModel = async (companyId) => {
 const addCustomizationModel = async (data) => {
   const sql = `
     INSERT INTO company_customization 
-    (company_id, bg_color, text_color, btn_color, card_color, sidebar_bg_color, sidebar_text_color, header_bg_color, header_text_color, logo_url, banner_image)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (company_id, bg_color, text_color, btn_color, card_color, sidebar_bg_color, sidebar_text_color, header_bg_color, header_text_color, logo_url, banner_image, font_family, font_size_base, font_heading)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   await mySqlConnection.query(sql, [
     data.company_id,
@@ -30,6 +30,9 @@ const addCustomizationModel = async (data) => {
     data.header_text_color,
     data.logo_url,
     data.banner_image,
+    data.font_family,
+    data.font_size_base,
+    data.font_heading
   ]);
 };
 
@@ -44,7 +47,7 @@ const updateCustomizationModel = async (companyId, data) => {
       SET bg_color = ?, text_color = ?, btn_color = ?, card_color = ?,
           sidebar_bg_color = ?, sidebar_text_color = ?,
           header_bg_color = ?, header_text_color = ?,
-          logo_url = ?, banner_image = ?
+          logo_url = ?, banner_image = ?, font_family = ?, font_size_base = ?, font_heading = ?
       WHERE company_id = ?
     `;
     await mySqlConnection.query(sql, [
@@ -58,6 +61,9 @@ const updateCustomizationModel = async (companyId, data) => {
       data.header_text_color,
       data.logo_url,
       data.banner_image,
+      data.font_family,
+      data.font_size_base,
+      data.font_heading,
       companyId
     ]);
   } else {
@@ -74,6 +80,9 @@ const updateCustomizationModel = async (companyId, data) => {
       header_text_color: data.header_text_color,
       logo_url: data.logo_url,
       banner_image: data.banner_image,
+      font_family: data.font_family,
+      font_size_base: data.font_size_base,
+      font_heading: data.font_heading,
     });
   }
 };
