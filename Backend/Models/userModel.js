@@ -19,11 +19,11 @@ const getUserByEmailModel = async (email) => {
   return result[0];
 };
 const findOrCreateUserById = async ({ client_id, name, email, phone, telegram_id, address }) => {
-  const lookupSql = `SELECT user_id FROM users WHERE user_id = ? LIMIT 1`;
-  const [rows] = await mySqlConnection.query(lookupSql, [client_id]);
+  const lookupSql = `SELECT user_id FROM users WHERE user_id = ? OR phone = ? LIMIT 1`;
+  const [rows] = await mySqlConnection.query(lookupSql, [client_id, phone]);
 
   if (rows.length > 0) {
-    return client_id; // User exists
+    return rows[0].user_id; // User exists
   }
 
   const insertSql = `
@@ -40,6 +40,11 @@ const findOrCreateUserById = async ({ client_id, name, email, phone, telegram_id
   ]);
 
   return client_id; // Return the same ID after creation
+};
+const getUserByPhoneModel = async (phone) => {
+  const sql = `SELECT user_id, name, email, phone, telegram_id, created_at FROM users WHERE phone = ?`;
+  const [result] = await mySqlConnection.query(sql, [phone]);
+  return result[0];
 };
 const addUserModel = async (data) => {
   const sql = `
@@ -58,7 +63,8 @@ const addUserModel = async (data) => {
 export {
   getAllUsersModel,
   getUserByEmailModel,
+  getUserByPhoneModel, 
   getUserByIdModel,
- findOrCreateUserById,
+  findOrCreateUserById,
   addUserModel
 };

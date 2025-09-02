@@ -114,10 +114,10 @@ export default function AppointmentBooking() {
   }
 
   const nextStep = () => {
-    if (currentStep === 1 && (!formData.name || !formData.email)) {
-      setError("Please fill in your name and email to continue.")
-      return
-    }
+  if (currentStep === 1 && (!formData.name || !formData.phone)) {
+  setError("Please fill in your name and phone number to continue.");
+  return;
+}
     if (currentStep === 2 && (!formData.date || !formData.time)) {
       setError("Please select a date and time to continue.")
       return
@@ -142,10 +142,9 @@ export default function AppointmentBooking() {
 
           <h2 className="text-2xl font-bold text-card-foreground mb-2">Appointment Confirmed!</h2>
           <p className="text-muted-foreground mb-6 text-balance">
-            Thank you, <span className="font-semibold text-card-foreground">{formData.name}</span>. We've sent a
-            confirmation to <span className="font-semibold text-card-foreground">{formData.email}</span>.
-          </p>
-
+  Thank you, <span className="font-semibold text-card-foreground">{formData.name}</span>. We've sent a
+  confirmation to <span className="font-semibold text-card-foreground">{formData.phone}</span>.
+</p>
           <div className="bg-muted rounded-xl p-4 mb-6 space-y-3 text-left">
             <div className="flex items-center gap-3">
               <Stethoscope className="w-4 h-4 text-primary" />
@@ -252,34 +251,35 @@ export default function AppointmentBooking() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-card-foreground">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full bg-input border border-border rounded-xl px-4 py-3 text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
-                    placeholder="Enter your email"
-                  />
+              <div className="space-y-2">
+  <label htmlFor="email" className="text-sm font-medium text-card-foreground">
+    Email Address
+  </label>
+  <input
+    type="email"
+    id="email"
+    name="email"
+    value={formData.email}
+    onChange={handleChange}
+    className="w-full bg-input border border-border rounded-xl px-4 py-3 text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
+    placeholder="Enter your email (optional)"
+  />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <label htmlFor="phone" className="text-sm font-medium text-card-foreground">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full bg-input border border-border rounded-xl px-4 py-3 text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
-                    placeholder="Enter your phone number (optional)"
-                  />
+                <div className="space-y-2">
+  <label htmlFor="phone" className="text-sm font-medium text-card-foreground">
+    Phone Number *
+  </label>
+  <input
+    type="tel"
+    id="phone"
+    name="phone"
+    value={formData.phone}
+    onChange={handleChange}
+    className="w-full bg-input border border-border rounded-xl px-4 py-3 text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
+    placeholder="Enter your phone number"
+    required
+  />
                 </div>
               </div>
             </div>
@@ -401,7 +401,6 @@ export default function AppointmentBooking() {
                   )
                 })}
               </div>
-
               <div className="space-y-2">
                 <label htmlFor="notes" className="text-sm font-medium text-card-foreground">
                   Additional Notes

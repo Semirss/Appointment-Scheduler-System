@@ -2,7 +2,7 @@ import {
   addUserModel,
   getAllUsersModel,
   getUserByIdModel,
-  getUserByEmailModel
+  getUserByPhoneModel
 } from "../Models/userModel.js";
 
 // Get all users
@@ -27,32 +27,32 @@ export const getUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch user" });
   }
 };
-// Get user by email
-export const getUserByEmail = async (req, res) => {
+export const getUserByPhone = async (req, res) => {
   try {
-    const user = await getUserByEmailModel(req.params.email);
+    const user = await getUserByPhoneModel(req.params.phone);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
     res.status(200).json({ success: true, data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch user by email" });
+    res.status(500).json({ success: false, message: "Failed to fetch user by phone" });
   }
 };
+
 export const addUser = async (req, res) => {
   const { name, email, phone, telegram_id } = req.body;
   
-  // Basic validation
-  if (!name || !email) {
+  // Basic validation - now phone is required instead of email
+  if (!name || !phone) {
     return res.status(400).json({ 
       success: false, 
-      message: "Name and email are required" 
+      message: "Name and phone are required" 
     });
   }
 
   try {
     // First, check if user already exists by email
-    const existingUser = await getUserByEmailModel(email);
+    const existingUser = await getUserByPhoneModel(phone);
     
     if (existingUser) {
       // User already exists - return the existing user's data
