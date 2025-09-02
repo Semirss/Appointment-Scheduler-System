@@ -1,5 +1,6 @@
 // CompanyLayout.jsx
 import React, { useState } from 'react';
+
 import Dashboard from './Dashboard';
 import ViewAppointment from './ViewAppointment';
 import DesktopSidebar from '../../components/DesktopSidebar';
@@ -9,6 +10,7 @@ import AddAppointment from './AddAppointment';
 import UpdateInformation from './UpdateInformation';
 import ViewTransactions from './ViewTransactions';
 import { useCustomization } from '../../context/CustomizationContext';
+import AddService from './AddService';
 
 const CompanyLayout = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -27,8 +29,8 @@ const CompanyLayout = () => {
         return <Dashboard />;
       case 'View Appointment':
         return <ViewAppointment />;
-      case 'Add Appointment':
-        return <AddAppointment />;
+      case 'Add Service':
+        return <AddService />;
       case 'Update Information':
         return <UpdateInformation />;
       case 'View Transaction':
