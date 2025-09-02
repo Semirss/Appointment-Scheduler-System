@@ -12,10 +12,11 @@ const port = process.env.PORT || 5000;
 
 const app = express();
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+const corsOptions = {
+  origin: '*', // Allows all origins
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 // CORS configuration
 // app.use(cors({
