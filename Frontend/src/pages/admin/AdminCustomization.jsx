@@ -108,6 +108,9 @@ const AdminCustomization = () => {
               header_text: dbData.header_text_color || '#1F2937',
               logo_url: dbData.logo_url || '',
               banner_image: dbData.banner_image || '',
+              font_family: dbData.font_family || 'Inter',
+              font_size_base: dbData.font_size_base || '16px',
+              font_heading: dbData.font_heading || dbData.font_family || 'Inter',
               // description: dbData.description || ''
             });
             setPreviewLogo(dbData.logo_url || '');
@@ -140,6 +143,9 @@ const AdminCustomization = () => {
         header_text: '#1F2937',
         logo_url: '',
         banner_image: '',
+        font_family: 'Inter',
+        font_size_base: '16px',
+        font_heading: 'Inter',
         // description: ''
       });
       setPreviewLogo('');
@@ -213,6 +219,9 @@ const AdminCustomization = () => {
           header_text_color: customization.header_text,
           logo_url: customization.logo_url,
           banner_image: customization.banner_image,
+          font_family: customization.font_family,
+          font_size_base: customization.font_size_base,
+          font_heading: customization.font_heading,
           // description: customization.description
         });
 

@@ -12,17 +12,25 @@ const getCompaniesModel = async () => {
   return result;
 };
 
+export const getCompanyBySubdomainModel = async (subdomain) => {
+  const sql = `SELECT company_id, name, subdomain, email, category FROM companies WHERE subdomain = ? LIMIT 1`;
+  const [rows] = await mySqlConnection.query(sql, [subdomain]);
+  return rows[0]; // return single company or undefined
+};
+
+
 const addCompanyModel = async (data) => {
   const sql = `
-    INSERT INTO companies (name, email, phone, category, password)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO companies (name, email, phone, category, password, subdomain)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
   await mySqlConnection.query(sql, [
     data.name,
     data.email,
     data.phone,
     data.category,
-    data.password
+    data.password,
+    data.subdomain
   ]);
 };
 
@@ -32,17 +40,17 @@ const updateCompanyModel = async (id, data) => {
   if (data.password) {
     sql = `
       UPDATE companies
-      SET name = ?, email = ?, phone = ?, category = ?, password = ?
+      SET name = ?, email = ?, phone = ?, category = ?, password = ?, subdomain = ?
       WHERE company_id = ?
     `;
-    params = [data.name, data.email, data.phone, data.category, data.password, id];
+    params = [data.name, data.email, data.phone, data.category, data.password, data.subdomain, id];
   } else {
     sql = `
       UPDATE companies
-      SET name = ?, email = ?, phone = ?, category = ?
+      SET name = ?, email = ?, phone = ?, category = ?, subdomain = ?
       WHERE company_id = ?
     `;
-    params = [data.name, data.email, data.phone, data.category, id];
+    params = [data.name, data.email, data.phone, data.category, data.subdomain, id];
   }
 
   await mySqlConnection.query(sql, params);

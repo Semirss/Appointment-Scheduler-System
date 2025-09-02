@@ -11,6 +11,7 @@ import AdminCustomization from './pages/admin/AdminCustomization';
 import { CompanyProvider } from './context/CompanyContext';
 import GlobalStyles from './components/GlobalStyles';
 import FontLoader from './components/FontLoader';
+import AppointmentBooking from './pages/user/User';
 
 function App() {
   // console.log(UserProvider);
@@ -25,6 +26,7 @@ function App() {
             {/* <Route path='/adminLogin' element={<Login />}></Route> */}
             <Route path="/" element={<CompanyLayout />} />
             <Route path="/adminCustomization" element={<AdminCustomization />} />
+            <Route path="/book-appointment" element={<AppointmentBooking />} />
             {/* <Route path="/admin" element={<EnhancedAdmin />}></Route> */}
             {/* <Route path="/admin" element={<Admin />} /> */}
           </Routes>
