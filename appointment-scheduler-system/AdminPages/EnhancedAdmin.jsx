@@ -1,6 +1,4 @@
 "use client"
-
-import React from "react"
 import { useState, useEffect } from "react"
 import {
   BarChart3,
@@ -10,13 +8,11 @@ import {
   Search,
   Plus,
   Filter,
-  Download,
   Eye,
   Edit,
   Trash2,
   Upload,
   Calendar,
-  DollarSign,
   Activity,
   AlertCircle,
   CheckCircle,
@@ -26,34 +22,51 @@ import {
   LogOut,
   User,
   Save,
-  XCircle
+  XCircle,
 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useNavigate } from "react-router-dom"
+import AdminCustomization from "./AdminCustomization"
 
-const CompaniesRegistrationChart = ({ companies = [], appointments = [] }) => {
-  // Generate chart data based on companies registration dates
-  const chartData = React.useMemo(() => {
-    if (!companies.length && !appointments.length) return []
+const CompaniesRegistrationChart = ({ companies = [] }) => {
+  const [chartData, setChartData] = useState([])
 
-    // Group companies by month for the last 6 months
-    const months = []
-    const now = new Date()
+  useEffect(() => {
+    if (companies.length) {
+      // Group companies by registration month for the last 6 months
+      const now = new Date()
+      const monthsData = []
 
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthName = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+      // Create an array for the last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthName = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+        const monthKey = date.toISOString().slice(0, 7) // YYYY-MM format
 
-      // For demo purposes, generate some realistic data
-      const count = Math.floor(Math.random() * 15) + 5
-      months.push({
-        month: monthName,
-        companies: count,
-      })
+        // Count companies registered in this month
+        const count = companies.filter((company) => {
+          if (!company.created_at) return false
+          const companyDate = new Date(company.created_at)
+          return companyDate.toISOString().slice(0, 7) === monthKey
+        }).length
+
+        monthsData.push({
+          month: monthName,
+          companies: count,
+        })
+      }
+
+      setChartData(monthsData)
     }
-
-    return months
   }, [companies])
+
+  if (chartData.length === 0) {
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <p className="text-muted-foreground">No registration data available</p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-64">
@@ -83,6 +96,7 @@ const CompaniesRegistrationChart = ({ companies = [], appointments = [] }) => {
   )
 }
 
+// Update the EnhancedAdmin component to fetch appointment counts by company
 const EnhancedAdmin = () => {
   const [currentPage, setCurrentPage] = useState("dashboard")
   const [notificationCount, setNotificationCount] = useState(3)
@@ -100,20 +114,20 @@ const EnhancedAdmin = () => {
 
   // Get admin data from storage on component mount
   useEffect(() => {
-    const storedAdmin = localStorage.getItem('admin') || sessionStorage.getItem('admin')
+    const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
     if (storedAdmin) {
       setAdminData(JSON.parse(storedAdmin))
     } else {
       // If no admin data, redirect to login
-      navigate('/login')
+      navigate("/login")
     }
   }, [navigate])
 
   // Add logout function
   const handleLogout = () => {
-    localStorage.removeItem('admin')
-    sessionStorage.removeItem('admin')
-    navigate('/login')
+    localStorage.removeItem("admin")
+    sessionStorage.removeItem("admin")
+    navigate("/login")
   }
 
   const fetchCompanies = async () => {
@@ -182,7 +196,7 @@ const EnhancedAdmin = () => {
       if (!updatedData.password) {
         delete updatedData.password
       }
-      
+
       const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
         method: "PUT",
         headers: {
@@ -327,8 +341,8 @@ const EnhancedAdmin = () => {
     ])
   }, [])
 
-  const getCompanyAppointmentCount = (companyName) => {
-    return appointments.filter((apt) => apt.company_name?.toLowerCase() === companyName.toLowerCase()).length
+  const getCompanyAppointmentCount = (companyId) => {
+    return appointments.filter((apt) => apt.company_id === companyId).length
   }
 
   const handleNavigation = (page) => {
@@ -367,18 +381,9 @@ const EnhancedAdmin = () => {
           />
         )
       case "template":
-        return <ModernTemplateForm />
+        return <AdminCustomization />
       default:
-        return (
-          <ModernDashboardView
-            companies={companies}
-            isLoading={isLoadingCompanies}
-            appointments={appointments}
-            isLoadingAppointments={isLoadingAppointments}
-            recentActivities={recentActivities}
-            getCompanyAppointmentCount={getCompanyAppointmentCount}
-          />
-        )
+        return <AdminCustomization />
     }
   }
 
@@ -442,15 +447,11 @@ const EnhancedAdmin = () => {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-              <span className="text-xs font-bold text-white">
-                {adminData ? adminData.initials : "AD"}
-              </span>
+              <span className="text-xs font-bold text-white">{adminData ? adminData.initials : "AD"}</span>
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Admin User</p>
-              <p className="text-xs text-muted-foreground">
-                {adminData ? adminData.email : "admin@company.com"}
-              </p>
+              <p className="text-xs text-muted-foreground">{adminData ? adminData.email : "admin@company.com"}</p>
             </div>
           </div>
         </div>
@@ -552,9 +553,9 @@ const ModernDashboardView = ({
       color: "from-green-500 to-green-600",
     },
     {
-      title: "Active Companies",
-      value: isLoading ? "..." : companies.filter((c) => c.status === "Active").length.toString(),
-      change: "+5%",
+      title: "status",
+      value: isLoading ? "..." : "Operational",
+      change: "+95%",
       trend: "up",
       icon: Activity,
       color: "from-purple-500 to-purple-600",
@@ -562,10 +563,9 @@ const ModernDashboardView = ({
   ]
 
   const topCompaniesData = companies
-    .slice(0, 5)
     .map((company) => ({
       company: company.name,
-      count: getCompanyAppointmentCount(company.name),
+      count: getCompanyAppointmentCount(company.company_id),
       status: company.status === "Active" ? "High" : "Medium",
       growth: `+${Math.floor(Math.random() * 25) + 5}%`,
       avatar: company.name
@@ -576,6 +576,7 @@ const ModernDashboardView = ({
     }))
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count)
+    .slice(0, 5) // Moved slice to end to get top 5 after sorting
 
   return (
     <div className="space-y-4">
@@ -706,14 +707,11 @@ const ModernDashboardView = ({
       </div>
 
       {appointments.length > 0 && (
-        <div className="bg-card rounded-xl p-4 border border-border hover-lift">
-          {/* Appointments content */}
-        </div>
+        <div className="bg-card rounded-xl p-4 border border-border hover-lift">{/* Appointments content */}</div>
       )}
     </div>
   )
 }
-
 const ModernAddCompanyForm = ({ onCompanyAdded }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -721,6 +719,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     phone: "",
     category: "",
     password: "",
+    subdomain: "", // Added subdomain field
   })
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -743,6 +742,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.password) newErrors.password = "Password is required"
+    if (!formData.subdomain.trim()) newErrors.subdomain = "Subdomain is required" // Added validation
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -753,6 +753,12 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     // Password validation
     if (formData.password && formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters"
+    }
+
+    // Subdomain validation (alphanumeric and hyphens only)
+    const subdomainRegex = /^[a-zA-Z0-9-]+$/
+    if (formData.subdomain && !subdomainRegex.test(formData.subdomain)) {
+      newErrors.subdomain = "Subdomain can only contain letters, numbers, and hyphens"
     }
 
     setErrors(newErrors)
@@ -785,10 +791,11 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
       setSuccessMessage(result.message || "Company added successfully!")
       setFormData({
         name: "",
-    email: "",
-    phone: "",
-    category: "",
-    password: "",
+        email: "",
+        phone: "",
+        category: "",
+        password: "",
+        subdomain: "", // Reset subdomain field
       })
 
       if (onCompanyAdded) {
@@ -831,7 +838,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
                 "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
-                "password": "password123"
+                "password": "password123", "subdomain": "company-name"
                 {"}"}
               </code>
             </p>
@@ -971,6 +978,41 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     </p>
                   )}
                 </div>
+
+                {/* New Subdomain Field */}
+                <div className="space-y-2">
+                  <label htmlFor="subdomain" className="block text-sm font-medium text-foreground">
+                    Subdomain <span className="text-destructive">*</span>
+                  </label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-border bg-muted text-muted-foreground text-sm">
+                      https://
+                    </span>
+                    <input
+                      type="text"
+                      name="subdomain"
+                      id="subdomain"
+                      value={formData.subdomain}
+                      onChange={handleChange}
+                      className={`flex-1 px-4 py-3 bg-input border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
+                        errors.subdomain ? "border-destructive" : "border-border"
+                      }`}
+                      placeholder="company-name"
+                    />
+                    <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
+                      .yourdomain.com
+                    </span>
+                  </div>
+                  {errors.subdomain && (
+                    <p className="text-sm text-destructive flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.subdomain}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Use only letters, numbers, and hyphens. No spaces or special characters.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -986,6 +1028,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     phone: "",
                     category: "",
                     password: "",
+                    subdomain: "", // Reset subdomain field
                   })
                   setErrors({})
                 }}
@@ -1013,7 +1056,6 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     </div>
   )
 }
-
 const ModernTemplateForm = () => {
   const [formData, setFormData] = useState({
     companyName: "",
@@ -1359,17 +1401,17 @@ const ModernViewCompaniesList = ({
 
   useEffect(() => {
     if (editingCompanyId) {
-      const companyToEdit = companies.find(c => c.company_id === editingCompanyId)
+      const companyToEdit = companies.find((c) => c.company_id === editingCompanyId)
       if (companyToEdit) {
-        setEditFormData({...companyToEdit})
+        setEditFormData({ ...companyToEdit })
       }
     }
   }, [editingCompanyId, companies])
 
   const handleEditChange = (field, value) => {
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -1486,12 +1528,12 @@ const ModernViewCompaniesList = ({
                         <input
                           type="text"
                           value={editFormData.name || ""}
-                          onChange={(e) => handleEditChange('name', e.target.value)}
+                          onChange={(e) => handleEditChange("name", e.target.value)}
                           className="text-lg font-semibold text-foreground bg-input border border-border rounded px-2 py-1"
                         />
                         <select
                           value={editFormData.category || ""}
-                          onChange={(e) => handleEditChange('category', e.target.value)}
+                          onChange={(e) => handleEditChange("category", e.target.value)}
                           className="text-sm text-muted-foreground bg-input border border-border rounded px-2 py-1 mt-1"
                         >
                           <option value="">Select category</option>
@@ -1506,7 +1548,7 @@ const ModernViewCompaniesList = ({
                     </div>
                     <select
                       value={editFormData.status || ""}
-                      onChange={(e) => handleEditChange('status', e.target.value)}
+                      onChange={(e) => handleEditChange("status", e.target.value)}
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         editFormData.status === "Active"
                           ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
@@ -1524,7 +1566,7 @@ const ModernViewCompaniesList = ({
                       <input
                         type="email"
                         value={editFormData.email || ""}
-                        onChange={(e) => handleEditChange('email', e.target.value)}
+                        onChange={(e) => handleEditChange("email", e.target.value)}
                         className="ml-2 bg-input border border-border rounded px-2 py-1 flex-1"
                       />
                     </div>
@@ -1533,13 +1575,9 @@ const ModernViewCompaniesList = ({
                       <input
                         type="text"
                         value={editFormData.phone || ""}
-                        onChange={(e) => handleEditChange('phone', e.target.value)}
+                        onChange={(e) => handleEditChange("phone", e.target.value)}
                         className="ml-2 bg-input border border-border rounded px-2 py-1 flex-1"
                       />
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span className="font-medium">Appointments:</span>
-                      <span className="ml-2 font-semibold text-primary">{getCompanyAppointmentCount(company.name)}</span>
                     </div>
                   </div>
 
@@ -1602,21 +1640,11 @@ const ModernViewCompaniesList = ({
                       <span className="font-medium">Phone:</span>
                       <span className="ml-2">{company.phone || "No phone"}</span>
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <span className="font-medium">Appointments:</span>
-                      <span className="ml-2 font-semibold text-primary">{getCompanyAppointmentCount(company.name)}</span>
-                    </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-border">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => onView(company.company_id)}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                      </button>
+                     
                       <button
                         onClick={() => onEdit(company.company_id)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors group"
