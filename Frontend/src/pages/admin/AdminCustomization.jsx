@@ -66,7 +66,7 @@ const AdminCustomization = () => {
         ];
         
         try {
-          const response = await axios.get('http://localhost:5000/api/companies');
+          const response = await axios.get('https://gravity.et/appointment_Backend/api/companies');
           setCompanies(response.data.data || mockCompanies);
         } catch (error) {
           console.error('API Error, using mock companies:', error);
@@ -93,7 +93,7 @@ const AdminCustomization = () => {
         
         // Try to fetch from API, fall back to defaults if it fails
         try {
-          const response = await axios.get(`http://localhost:5000/api/customizations/${selectedCompany}`);
+          const response = await axios.get(`https://gravity.et/appointment_Backend/api/customizations/${selectedCompany}`);
           
           if (response.data.success && response.data.data) {
             const dbData = response.data.data;
@@ -208,7 +208,7 @@ const AdminCustomization = () => {
     try {
       // Try to save to API, but don't fail completely if API is down
       try {
-        await axios.put(`http://localhost:5000/api/customizations/${selectedCompany}`, {
+        await axios.put(`https://gravity.et/appointment_Backend/api/customizations/${selectedCompany}`, {
           bg_color: customization.theme_background,
           text_color: customization.theme_text,
           btn_color: customization.theme_button,

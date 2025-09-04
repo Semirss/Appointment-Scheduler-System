@@ -12,7 +12,7 @@ export const useCustomization = () => {
   return context;
 };
 
-export const CustomizationProvider = ({ children, companyId = 2 }) => {
+export const CustomizationProvider = ({ children, companyId = 6 }) => {
   const [customization, setCustomization] = useState({
     theme_background: '#FFFFFF',
     theme_text: '#1F2937',
@@ -35,7 +35,7 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
   const fetchCustomization = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/customizations/${companyId}`);
+      const response = await axios.get(`https://gravity.et/appointment_Backend/api/customizations/${companyId}`);
       
       if (response.data.success && response.data.data) {
         const dbData = response.data.data;
@@ -67,7 +67,7 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
   // Save customization to database
   const saveCustomizationToDB = async (newCustomization) => {
     try {
-      await axios.put(`http://localhost:5000/api/customizations/${companyId}`, {
+      await axios.put(`https://gravity.et/appointment_Backend/api/customizations/${companyId}`, {
         bg_color: newCustomization.theme_background,
         text_color: newCustomization.theme_text,
         btn_color: newCustomization.theme_button,

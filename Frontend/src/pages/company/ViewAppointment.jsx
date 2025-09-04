@@ -89,9 +89,9 @@ const ViewAppointment = () => {
   const dropdownRef = useRef(null);
 
   // Set a constant appointee ID for this component
-  const appointeeId = 2;
+  // const appointeeId = 25;
   // Set a constant company ID to fetch addresses for
-  const companyId = 2;
+  const companyId = 6;
 
   const generateRandomId = () => {
     return Math.floor(Math.random() * 1000000) + 1;
@@ -102,7 +102,7 @@ const ViewAppointment = () => {
       try {
         setLoading(true);
         // Fetch appointments for the specified appointee ID
-        const response = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
         setAppointments(response.data.data || []);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -113,7 +113,7 @@ const ViewAppointment = () => {
 
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/addresses/${companyId}`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/addresses/${companyId}`);
         setAvailableBranches(response.data.data || []);
       } catch (error) {
         console.error('Error fetching branches:', error);
@@ -122,7 +122,7 @@ const ViewAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/services`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/services`);
         setAvailableServices(response.data.data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -131,7 +131,7 @@ const ViewAppointment = () => {
 
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/users`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
         setAvailableClients(response.data.data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -142,7 +142,7 @@ const ViewAppointment = () => {
     fetchBranches();
     fetchServices();
     fetchClients();
-  }, [appointeeId, companyId]);
+  }, [companyId]);
   
   // Effect to handle clicks outside of the dropdown to close it
   useEffect(() => {
@@ -272,10 +272,10 @@ const ViewAppointment = () => {
     };
 
     try {
-      await axios.put(`http://localhost:5000/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
+      await axios.put(`https://gravity.et/appointment_Backend/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
       setShowRescheduleModal(false);
       // Refresh the appointments list
-      const response = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+      const response = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
       setAppointments(response.data.data || []);
     } catch (error) {
       console.error('Error rescheduling appointment:', error);
@@ -342,14 +342,14 @@ const ViewAppointment = () => {
 
     try {
         console.log("Sending payload:", payload);
-        const response = await axios.post(`http://localhost:5000/api/appointments/createAppointment`, payload);
+        const response = await axios.post(`https://gravity.et/appointment_Backend/api/appointments/createAppointment`, payload);
         setShowNewAppointmentModal(false);
         // Refresh the appointments list
-        const appointmentsResponse = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+        const appointmentsResponse = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
         setAppointments(appointmentsResponse.data.data || []);
         // Refresh clients list if a new client was created
         if (showNewClientForm) {
-        const clientsResponse = await axios.get(`http://localhost:5000/api/users`);
+        const clientsResponse = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
         setAvailableClients(clientsResponse.data.data || []);
         }
     } catch (error) {
@@ -379,7 +379,7 @@ const ViewAppointment = () => {
     setShowDropdown({}); // Close the dropdown
 
     try {
-      await axios.delete(`http://localhost:5000/api/appointments/${id}`);
+      await axios.delete(`https://gravity.et/appointment_Backend/api/appointments/${id}`);
       // Success is handled by the optimistic update
     } catch (error) {
       console.error('Error deleting appointment:', error);

@@ -26,7 +26,7 @@ const CompanyLogin = () => {
 
     try {
       // Step 1: Attempt to log in the company
-      const loginResponse = await axios.post('http://localhost:5000/api/companyLogin', formData);
+      const loginResponse = await axios.post('https://gravity.et/appointment_Backend/api/companyLogin', formData);
       console.log('Login successful:', loginResponse.data);
 
       // Step 2: Get the subdomain from the current URL
@@ -39,7 +39,7 @@ const CompanyLogin = () => {
 
       // Step 3: If a subdomain exists, fetch company data using it
       if (subdomain) {
-        const companyResponse = await axios.get(`http://localhost:5000/api/companies/subdomain/${subdomain}`);
+        const companyResponse = await axios.get(`https://gravity.et/appointment_Backend/api/companies/subdomain/${subdomain}`);
         const companyData = companyResponse.data.data;
         console.log(companyData.company);
         setCompany(companyData);

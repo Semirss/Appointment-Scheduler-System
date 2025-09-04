@@ -21,7 +21,7 @@ const Header = ({ isCollapsed }) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await axios.get("http://localhost:5000/api/appointments", {
+      const response = await axios.get("https://gravity.et/appointment_Backend/api/appointments", {
         headers: {
           "Content-Type": "application/json",
         },
