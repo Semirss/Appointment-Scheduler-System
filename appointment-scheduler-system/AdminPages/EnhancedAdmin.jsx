@@ -524,7 +524,7 @@ useEffect(() => {
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all hover:bg-muted ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all hover:scale-105 ${
                     currentPage === item.id
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
