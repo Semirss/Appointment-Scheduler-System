@@ -24,79 +24,187 @@ import {
   Save,
   XCircle,
 } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useNavigate } from "react-router-dom"
 import AdminCustomization from "./AdminCustomization"
 
-const CompaniesRegistrationChart = ({ companies = [] }) => {
+const AppointmentsCountChart = ({ appointments = [] }) => {
   const [chartData, setChartData] = useState([])
 
   useEffect(() => {
-    if (companies.length) {
-      // Group companies by registration month for the last 6 months
-      const now = new Date()
-      const monthsData = []
-
-      // Create an array for the last 6 months
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        const monthName = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
-        const monthKey = date.toISOString().slice(0, 7) // YYYY-MM format
-
-        // Count companies registered in this month
-        const count = companies.filter((company) => {
-          if (!company.created_at) return false
-          const companyDate = new Date(company.created_at)
-          return companyDate.toISOString().slice(0, 7) === monthKey
-        }).length
-
-        monthsData.push({
-          month: monthName,
-          companies: count,
+    if (appointments.length) {
+      // Get all appointment dates
+      const appointmentDates = appointments
+        .filter(appointment => appointment.created_at)
+        .map(appointment => {
+          const date = new Date(appointment.created_at)
+          return date.toISOString().slice(0, 10) // YYYY-MM-DD format
         })
+      
+      // Find the earliest and latest dates
+      const uniqueDates = [...new Set(appointmentDates)].sort()
+      
+      if (uniqueDates.length === 0) {
+        setChartData([])
+        return
       }
 
-      setChartData(monthsData)
+      const earliestDate = new Date(uniqueDates[0])
+      const latestDate = new Date(uniqueDates[uniqueDates.length - 1])
+      
+      // Create date range from earliest to latest appointment
+      const daysData = []
+      const currentDate = new Date(earliestDate)
+      
+      while (currentDate <= latestDate) {
+        const dateKey = currentDate.toISOString().slice(0, 10)
+        const dayName = currentDate.toLocaleDateString("en-US", { weekday: "short" })
+        const dateFormatted = currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+
+        // Count appointments for this day
+        const count = appointments.filter((appointment) => {
+          if (!appointment.created_at) return false
+          const appointmentDate = new Date(appointment.created_at)
+          return appointmentDate.toISOString().slice(0, 10) === dateKey
+        }).length
+
+        daysData.push({
+          day: dayName,
+          date: dateFormatted,
+          fullDate: dateKey,
+          appointments: count,
+        })
+
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      // If we have too many days, show only the last 14 days for better visibility
+      const limitedData = daysData.length > 14 ? daysData.slice(-14) : daysData
+      
+      setChartData(limitedData)
+    } else {
+      setChartData([])
     }
-  }, [companies])
+  }, [appointments])
 
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-muted-foreground">No registration data available</p>
+      <div className="h-72 flex flex-col items-center justify-center bg-gradient-to-br from-card to-muted/30 rounded-2xl p-5 border border-border">
+        <Calendar className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
+        <p className="text-muted-foreground font-medium text-sm">No appointment data available</p>
+        <p className="text-xs text-muted-foreground mt-1">Appointments will appear here once scheduled</p>
       </div>
     )
   }
 
+  // Calculate stats for the chart header
+  const totalAppointments = chartData.reduce((sum, day) => sum + day.appointments, 0)
+  const averagePerDay = totalAppointments / chartData.length
+  const peakDay = chartData.reduce((max, day) => day.appointments > max.appointments ? day : max, chartData[0])
+
   return (
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-          <XAxis dataKey="month" axisLine={false} tickLine={false} className="text-xs" />
-          <YAxis axisLine={false} tickLine={false} className="text-xs" />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "8px",
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="companies"
-            stroke="hsl(var(--primary))"
-            strokeWidth={2}
-            dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="bg-card   p-" style={{ transform: 'scale(0.91)', transformOrigin: 'top center' }}>
+      {/* Chart Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
+        <div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {chartData.length} day{chartData.length !== 1 ? 's' : ''} • {totalAppointments} total appointments
+          </p>
+        </div>
+        <div className="flex items-center space-x-3 mt-2 sm:mt-0">
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Avg per day</p>
+            <p className="text-xs font-semibold text-foreground">{averagePerDay.toFixed(1)}</p>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Peak day</p>
+            <p className="text-xs font-semibold text-foreground">{peakDay.appointments} on {peakDay.day}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Container */}
+      <div className="h-56">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart 
+            data={chartData} 
+            margin={{ top: 8, right: 8, left: 0, bottom: 16 }}
+            barSize={28}
+          >
+            <defs>
+              <linearGradient id="appointmentGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              vertical={false}
+              stroke="hsl(var(--border))"
+              opacity={0.5}
+            />
+            
+            <XAxis 
+              dataKey="day" 
+              axisLine={false} 
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              padding={{ left: 8, right: 8 }}
+            />
+            
+            <YAxis 
+              axisLine={false} 
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              width={28}
+            />
+            
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-background border border-border rounded-lg p-2 shadow-lg backdrop-blur-sm">
+                      <p className="text-xs font-semibold text-foreground mb-1">{data.date}</p>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-purple-700" />
+                        <p className="text-xs text-foreground">
+                          {data.appointments} appointment{data.appointments !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              }}
+            />
+            
+            <Bar
+              dataKey="appointments"
+              fill="url(#appointmentGradient)"
+              radius={[4, 4, 0, 0]}
+              className="cursor-pointer transition-all hover:opacity-80"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Chart Footer */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-purple-400" />
+          <span className="text-xs text-muted-foreground">Daily appointments</span>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Updated {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
     </div>
   )
 }
-
-// Update the EnhancedAdmin component to fetch appointment counts by company
 const EnhancedAdmin = () => {
   const [currentPage, setCurrentPage] = useState("dashboard")
   const [notificationCount, setNotificationCount] = useState(3)
@@ -109,21 +217,19 @@ const EnhancedAdmin = () => {
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
   const [recentActivities, setRecentActivities] = useState([])
   const [adminData, setAdminData] = useState(null)
-  const [editingCompanyId, setEditingCompanyId] = useState(null) // Changed to track ID only
+  const [editingCompanyId, setEditingCompanyId] = useState(null)
   const navigate = useNavigate()
 
   // Get admin data from storage on component mount
-  useEffect(() => {
-    const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
-    if (storedAdmin) {
-      setAdminData(JSON.parse(storedAdmin))
-    } else {
-      // If no admin data, redirect to login
-      navigate("/login")
-    }
-  }, [navigate])
+useEffect(() => {
+  const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
+  if (storedAdmin) {
+    setAdminData(JSON.parse(storedAdmin))
+  } else {
+    navigate("/login")
+  }
+}, [navigate])
 
-  // Add logout function
   const handleLogout = () => {
     localStorage.removeItem("admin")
     sessionStorage.removeItem("admin")
@@ -134,7 +240,6 @@ const EnhancedAdmin = () => {
     try {
       setIsLoadingCompanies(true)
       setCompaniesError(null)
-
       const response = await fetch("http://localhost:5000/api/companies")
 
       if (!response.ok) {
@@ -142,7 +247,6 @@ const EnhancedAdmin = () => {
       }
 
       const result = await response.json()
-
       if (result.success) {
         setCompanies(result.data)
         if (result.data.length > 0) {
@@ -170,10 +274,8 @@ const EnhancedAdmin = () => {
       }
 
       const result = await response.json()
-
       if (result.success) {
         setAppointments(result.data)
-        // Update recent activities for appointments
         if (result.data.length > 0) {
           updateRecentActivities("appointment", result.data[result.data.length - 1])
         }
@@ -192,7 +294,6 @@ const EnhancedAdmin = () => {
 
   const handleSaveCompany = async (companyId, updatedData) => {
     try {
-      // Remove password field if it's empty to avoid hashing empty string
       if (!updatedData.password) {
         delete updatedData.password
       }
@@ -212,9 +313,7 @@ const EnhancedAdmin = () => {
       }
 
       const result = await response.json()
-
       if (result.success) {
-        // Refresh companies list
         fetchCompanies()
         setEditingCompanyId(null)
         updateRecentActivities("company_updated", updatedData.name)
@@ -246,9 +345,7 @@ const EnhancedAdmin = () => {
       }
 
       const result = await response.json()
-
       if (result.success) {
-        // Refresh companies list
         fetchCompanies()
         updateRecentActivities("company_deleted", { id: companyId })
       } else {
@@ -269,7 +366,6 @@ const EnhancedAdmin = () => {
       }
 
       const result = await response.json()
-
       if (result.success) {
         alert(`Company has ${result.data.total_appointees} total appointees`)
       }
@@ -396,12 +492,10 @@ const EnhancedAdmin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div
         className={`fixed left-0 top-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -453,13 +547,18 @@ const EnhancedAdmin = () => {
               <p className="text-sm font-medium text-foreground">Admin User</p>
               <p className="text-xs text-muted-foreground">{adminData ? adminData.email : "admin@company.com"}</p>
             </div>
+             <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-muted rounded-lg transition-colors group"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
+              </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="lg:ml-64">
-        {/* Header */}
         <header className="bg-card border-b border-border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -478,10 +577,10 @@ const EnhancedAdmin = () => {
                       : currentPage}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {currentPage === "dashboard" && "Overview of your business metrics"}
-                  {currentPage === "addCompany" && "Register a new company"}
-                  {currentPage === "viewCompanies" && "Manage existing companies"}
-                  {currentPage === "template" && "Customize company templates"}
+                  {currentPage === "dashboard" }
+                  {currentPage === "addCompany" }
+                  {currentPage === "viewCompanies"}
+                  {currentPage === "template" }
                 </p>
               </div>
             </div>
@@ -495,16 +594,8 @@ const EnhancedAdmin = () => {
                   </span>
                 )}
               </button>
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
-              </button>
+             
 
-              {/* Admin Profile */}
               {adminData && (
                 <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
                   <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary hover:scale-110 rounded-full flex items-center justify-center">
@@ -518,7 +609,6 @@ const EnhancedAdmin = () => {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="p-4">{renderContent()}</main>
       </div>
     </div>
@@ -576,7 +666,7 @@ const ModernDashboardView = ({
     }))
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5) // Moved slice to end to get top 5 after sorting
+    .slice(0, 5)
 
   return (
     <div className="space-y-4">
@@ -613,21 +703,21 @@ const ModernDashboardView = ({
         })}
       </div>
 
+      {/* Updated chart section with appointments data */}
       <div className="bg-card rounded-xl p-4 border border-border hover-lift">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Companies Registration Trend</h3>
-            <p className="text-sm text-muted-foreground">Monthly registration overview</p>
+            <h3 className="text-lg font-semibold text-foreground">Appointments Trend</h3>
+            <p className="text-sm text-muted-foreground">Daily appointments overview (last 7 days)</p>
           </div>
           <button className="p-2 hover:bg-muted rounded-lg transition-colors">
             <Filter className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
-        <CompaniesRegistrationChart companies={companies} />
+        <AppointmentsCountChart appointments={appointments} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Activity - Updated with real data */}
         <div className="bg-card rounded-xl p-4 border border-border hover-lift">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -705,10 +795,6 @@ const ModernDashboardView = ({
           </div>
         </div>
       </div>
-
-      {appointments.length > 0 && (
-        <div className="bg-card rounded-xl p-4 border border-border hover-lift">{/* Appointments content */}</div>
-      )}
     </div>
   )
 }
@@ -1624,10 +1710,10 @@ const ModernViewCompaniesList = ({
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         company.status === "Active"
                           ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                          : " text-gray-800 dark:bg-yellow-300/20 dark:text-yellow-400"
                       }`}
                     >
-                      {company.status || "Unknown"}
+                      {company.status || "ID  "+company.company_id}
                     </div>
                   </div>
 

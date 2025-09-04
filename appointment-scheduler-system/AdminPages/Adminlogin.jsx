@@ -34,9 +34,9 @@ if (data.success) {
   console.log("Login successful:", data)
   
   // Store admin data
-  const adminData = {
-    email: data.admin.email,
-    admin_id: data.admin.admin_id,
+    const adminData = {
+    email: data.admin.email,        
+    admin_id: data.admin.admin_id,  
     initials: data.admin.email.charAt(0).toUpperCase()
   }
   
