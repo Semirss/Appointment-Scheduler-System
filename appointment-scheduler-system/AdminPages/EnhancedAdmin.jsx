@@ -934,14 +934,13 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         <div className="p-8">
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-foreground mb-2">Add New Company</h3>
-            <p className="text-muted-foreground">Fill in the details below to register a new company in the system.</p>
-            <p className="text-sm text-muted-foreground mt-2">API Endpoint: /api/companies</p>
+            <p className="text-muted-foreground text-sm">Fill in the details below to register a new company in the system.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
             <div className="space-y-6">
-              <h4 className="text-lg font-semibold text-foreground border-b border-border pb-2">Basic Information</h4>
+              <h4 className="text-lg font-semibold text-foreground  border-b border-border pb-2">Basic Information</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -954,7 +953,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     id="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 bg-input border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
+                    className={`w-full px-2 py-2 bg-input border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
                       errors.name ? "border-destructive" : "border-border"
                     }`}
                     placeholder="Enter company name"
@@ -1632,18 +1631,7 @@ const ModernViewCompaniesList = ({
                         </select>
                       </div>
                     </div>
-                    <select
-                      value={editFormData.status || ""}
-                      onChange={(e) => handleEditChange("status", e.target.value)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        editFormData.status === "Active"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                      }`}
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
+                    
                   </div>
 
                   <div className="space-y-2 mb-4">
