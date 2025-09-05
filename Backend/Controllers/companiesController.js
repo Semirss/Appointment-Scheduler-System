@@ -8,6 +8,10 @@ import {
 } from "../Models/companiesModel.js";
 
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export const loginCompany = async (req, res) => {
   try {
@@ -23,14 +27,23 @@ export const loginCompany = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    // Optional: JWT token logic
-    // const token = jwt.sign(
-    //   { company_id: company.company_id, email: company.email },
-    //   process.env.JWT_SECRET,
-    //   { expiresIn: "1d" }
-    // );
+    // Generate JWT token
+    const token = jwt.sign(
+      { company_id: company.company_id, email: company.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
-    // res.status(200).json({ success: true, token });
+    // Set cookie
+    res.cookie("company_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false, // HTTPS only in prod
+      sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+
+    // Send response
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -39,14 +52,12 @@ export const loginCompany = async (req, res) => {
         name: company.name,
         phone: company.phone,
         category: company.category
-        // token // optionally include token here
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Login failed" });
   }
 };
-
 
 export const getCompanies = async (req, res) => {
   try {

@@ -63,7 +63,7 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/addresses/${companyId}`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/addresses/${companyId}`);
         setAvailableBranches(response.data.data || []);
       } catch (error) {
         console.error('Error fetching branches:', error);
@@ -72,7 +72,7 @@ const AddAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/services`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/services`);
         setAvailableServices(response.data.data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -81,7 +81,7 @@ const AddAppointment = () => {
 
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/users`);
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
         setAvailableClients(response.data.data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -160,7 +160,7 @@ const AddAppointment = () => {
 
     try {
       console.log("Sending payload:", payload);
-      const response = await axios.post(`http://localhost:5000/api/appointments/createAppointment`, payload);
+      const response = await axios.post(`https://gravity.et/appointment_Backend/api/appointments/createAppointment`, payload);
       
       // Show success message
       alert('Appointment created successfully!');
@@ -184,7 +184,7 @@ const AddAppointment = () => {
       
       // Refresh clients list if a new client was created
       if (showNewClientForm) {
-        const clientsResponse = await axios.get(`http://localhost:5000/api/users`);
+        const clientsResponse = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
         setAvailableClients(clientsResponse.data.data || []);
       }
     } catch (error) {

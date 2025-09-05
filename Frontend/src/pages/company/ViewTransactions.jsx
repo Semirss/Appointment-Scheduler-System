@@ -53,8 +53,8 @@ const ViewTransactions = () => {
       setError(null);
       
       try {
-        const companyId = 2; // Using company ID 2 as specified
-        const response = await axios.get(`http://localhost:5000/api/transactions/company/${companyId}`);
+        const companyId = 6; // Using company ID 2 as specified
+        const response = await axios.get(`https://gravity.et/appointment_Backend/api/transactions/company/${companyId}`);
         
         // if (!response.ok) {
         //   throw new Error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);

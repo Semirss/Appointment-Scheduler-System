@@ -75,7 +75,7 @@ const AddService = () => {
     };
 
     try {
-      const response = await axios.post(`http://localhost:5000/api/services`, payload);
+      const response = await axios.post(`https://gravity.et/appointment_Backend/api/services`, payload);
       
       if (response.data.success) {
         setSuccessMessage('Service created successfully!');

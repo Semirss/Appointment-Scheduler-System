@@ -25,14 +25,20 @@ const CompanyLogin = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/companyLogin', formData);
+      // Step 1: Attempt to log in the company
+      const loginResponse = await axios.post('https://gravity.et/appointment_Backend/api/companyLogin', formData);
+
+      // Step 2: Extract the company data directly from the login response
+      const companyData = loginResponse.data.data;
+      setCompany(companyData); // Store the entire company object in context
+
+      console.log('Login successful! Company data:', companyData);
       setSuccess('Login successful! Welcome back.');
-      console.log(response.data.data.name)
-      setCompany(response.data.data.name);
       navigate('/');
-      console.log(response.data);
+
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login failed:', err);
     } finally {
       setIsLoading(false);
     }

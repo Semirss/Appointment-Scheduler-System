@@ -119,11 +119,11 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   // Appointee ID can be a prop, a context variable, or a constant
-  const appointeeId = 2;
+  const companyId = 6;
 
   useEffect(() => {
     fetchDashboardData();
-  }, [appointeeId]);
+  }, [companyId]);
 
   const fetchDashboardData = async () => {
     try {
@@ -132,9 +132,9 @@ const Dashboard = () => {
 
       // Fetch all data in parallel
       const [usersResponse, appointmentsResponse, ratingsResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/users'),
-        axios.get(`http://localhost:5000/api/appointments/appointees/${appointeeId}`),
-        axios.get('http://localhost:5000/api/ratings')
+        axios.get('https://gravity.et/appointment_Backend/api/users'),
+        axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`),
+        axios.get('https://gravity.et/appointment_Backend/api/ratings')
       ]);
 
       setUsers(usersResponse.data.data || []);
