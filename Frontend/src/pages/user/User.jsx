@@ -26,7 +26,7 @@ export default function AppointmentBooking() {
   const [loading, setLoading] = useState(false)
 
   // API base URL - make sure this matches your backend
-  const API_BASE_URL = "https://gravity.et/appointment_Backend/api"
+  // const API_BASE_URL = "https://gravity.et/appointment_Backend/api"
   const subdomain = window.location.hostname.split('.')[0];
   // console.log(subdomain)
 
@@ -97,7 +97,7 @@ export default function AppointmentBooking() {
         setLoading(true);
         
         // First, fetch company by subdomain
-        const companyRes = await axios.get(`${API_BASE_URL}/companies/subdomain/${subdomain}`);
+        const companyRes = await axios.get(`https://gravity.et/appointment_Backend/api/companies/subdomain/${subdomain}`);
         const companyData = companyRes.data.data;
         console.log(companyRes);
         setCompany(companyData);
@@ -106,7 +106,7 @@ export default function AppointmentBooking() {
         setFormData(prev => ({ ...prev, company_id: companyData.company_id }));
         
         // Now fetch services for this company
-        const servicesRes = await axios.get(`${API_BASE_URL}/services/${companyData.company_id}`);
+        const servicesRes = await axios.get(`https://gravity.et/appointment_Backend/api/services/${companyData.company_id}`);
         setServices(servicesRes.data.data || []);
         
       } catch (err) {
@@ -190,7 +190,7 @@ export default function AppointmentBooking() {
       let clientId;
       
       // Create or get user
-      const userResponse = await fetch(`${API_BASE_URL}/api/users`, {
+      const userResponse = await fetch(`https://gravity.et/appointment_Backend/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -232,7 +232,7 @@ export default function AppointmentBooking() {
       
       console.log("Sending appointment data:", appointmentData);
       
-      const appointmentResponse = await fetch(`${API_BASE_URL}/api/appointments`, {
+      const appointmentResponse = await fetch(`https://gravity.et/appointment_Backend/api/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
