@@ -11,7 +11,7 @@ const getAppointeesByCompany = async (companyId) => {
   const sql = `
     SELECT 
       u.user_id, u.name, u.email, u.phone, u.telegram_id, u.address,
-      a.appointment_id, a.company_id, a.start_time, a.end_time, a.status,
+      a.appointment_id, a.company_id, a.start_time, a.end_time, a.status, a.created_at,
       cs.service_id, cs.name AS service_name,
       ca.branch_name, ca.location
     FROM users u

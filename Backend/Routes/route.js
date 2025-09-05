@@ -12,6 +12,10 @@ import { addRating, getRatings } from '../Controllers/ratingController.js';
 
 const router = express.Router();
 
+router.get('/', (req, res) => {
+  res.send('API root is working!');
+});
+
 // Admin login
 router.post("/adminLogin", loginAdmin);
 router.post("/adminRegister", addAdmin);

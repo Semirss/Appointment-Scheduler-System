@@ -8,7 +8,7 @@ import {
   getAppointeesByServiceInCompany,
   countAppointeesByCompany,
   countAppointeesByServiceInCompany
-} from "../models/appointmentModel.js";
+} from "../Models/appointmentModel.js";
 import mySqlConnection from "../Config/db.js";
 import { findOrCreateUserById } from "../Models/userModel.js";
 

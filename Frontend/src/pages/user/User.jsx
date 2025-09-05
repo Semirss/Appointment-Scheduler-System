@@ -462,14 +462,14 @@ export default function AppointmentBooking() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <label className="text-sm font-medium" style={styles.text}>
                       Company
                     </label>
                     <div className="w-full rounded-xl px-4 py-3" style={styles.muted}>
                       <p className="text-sm" style={styles.text}>{company.name}</p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             )}
