@@ -21,8 +21,8 @@ export const getCompanyBySubdomainModel = async (subdomain) => {
 
 const addCompanyModel = async (data) => {
   const sql = `
-    INSERT INTO companies (name, email, phone, category, password, subdomain)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO companies (name, email, phone, category, password, subdomain, tin_number)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   await mySqlConnection.query(sql, [
     data.name,
@@ -30,7 +30,8 @@ const addCompanyModel = async (data) => {
     data.phone,
     data.category,
     data.password,
-    data.subdomain
+    data.subdomain,
+    data.tin_number || null // Handle cases where tin_number might be undefined
   ]);
 };
 

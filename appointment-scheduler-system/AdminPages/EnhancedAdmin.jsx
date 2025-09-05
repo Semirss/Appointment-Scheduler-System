@@ -504,10 +504,11 @@ useEffect(() => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-lg font-bold text-foreground">Gravity</h1>
+              <img
+                src="/public/Gravity Logo.png"
+                alt="Gravity Logo"
+                className="w-35 h-12 object-contain hover:scale-105 transition-transform ease-in-out ml-2 "
+              />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -544,16 +545,16 @@ useEffect(() => {
               <span className="text-xs font-bold text-white">{adminData ? adminData.initials : "AD"}</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Admin User</p>
-              <p className="text-xs text-muted-foreground">{adminData ? adminData.email : "admin@company.com"}</p>
+              <p className="text-sm font-medium text-foreground">Admin</p>
+              <p className="text-xs text-gray-800 ">{adminData ? adminData.email : "admin@company.com"}</p>
             </div>
-             <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
-              </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-muted rounded-lg transition-colors group"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-purple-700" />
+            </button>
           </div>
         </div>
       </div>
@@ -594,7 +595,6 @@ useEffect(() => {
                   </span>
                 )}
               </button>
-             
 
               {adminData && (
                 <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
@@ -805,7 +805,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     phone: "",
     category: "",
     password: "",
-    subdomain: "", // Added subdomain field
+    subdomain: "",
+    tin_number: "", // Added TIN number field
   })
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -828,7 +829,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.password) newErrors.password = "Password is required"
-    if (!formData.subdomain.trim()) newErrors.subdomain = "Subdomain is required" // Added validation
+    if (!formData.subdomain.trim()) newErrors.subdomain = "Subdomain is required"
+    if (!formData.tin_number.trim()) newErrors.tin_number = "TIN number is required" // Added validation
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -845,6 +847,12 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     const subdomainRegex = /^[a-zA-Z0-9-]+$/
     if (formData.subdomain && !subdomainRegex.test(formData.subdomain)) {
       newErrors.subdomain = "Subdomain can only contain letters, numbers, and hyphens"
+    }
+
+    // TIN number validation (alphanumeric only)
+    const tinRegex = /^[a-zA-Z0-9]+$/
+    if (formData.tin_number && !tinRegex.test(formData.tin_number)) {
+      newErrors.tin_number = "TIN number can only contain letters and numbers"
     }
 
     setErrors(newErrors)
@@ -881,7 +889,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         phone: "",
         category: "",
         password: "",
-        subdomain: "", // Reset subdomain field
+        subdomain: "",
+        tin_number: "", // Reset TIN number field
       })
 
       if (onCompanyAdded) {
@@ -923,8 +932,9 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
               <br />
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
-                "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
-                "password": "password123", "subdomain": "company-name"
+                "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", 
+                "category": "Category", "password": "password123", "subdomain": "company-name",
+                "tin_number": "TIN123456789"
                 {"}"}
               </code>
             </p>
@@ -1064,7 +1074,6 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                   )}
                 </div>
 
-                {/* New Subdomain Field */}
                 <div className="space-y-2">
                   <label htmlFor="subdomain" className="block text-sm font-medium text-foreground">
                     Subdomain <span className="text-destructive">*</span>
@@ -1098,6 +1107,33 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     Use only letters, numbers, and hyphens. No spaces or special characters.
                   </p>
                 </div>
+
+                {/* New TIN Number Field */}
+                <div className="space-y-2">
+                  <label htmlFor="tin_number" className="block text-sm font-medium text-foreground">
+                    TIN Number <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="tin_number"
+                    id="tin_number"
+                    value={formData.tin_number}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-input border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
+                      errors.tin_number ? "border-destructive" : "border-border"
+                    }`}
+                    placeholder="Enter TIN number"
+                  />
+                  {errors.tin_number && (
+                    <p className="text-sm text-destructive flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.tin_number}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Tax Identification Number (letters and numbers only)
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1113,7 +1149,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     phone: "",
                     category: "",
                     password: "",
-                    subdomain: "", // Reset subdomain field
+                    subdomain: "",
+                    tin_number: "", // Reset TIN number field
                   })
                   setErrors({})
                 }}

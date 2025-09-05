@@ -76,16 +76,23 @@ export const getCompanyBySubdomain = async (req, res) => {
 
 
 export const addCompany = async (req, res) => {
-  const { name, email, phone, category, password, subdomain } = req.body;
+  const { name, email, phone, category, password, subdomain, tin_number } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await addCompanyModel({ name, email, phone, category, password: hashedPassword, subdomain });
+    await addCompanyModel({ 
+      name, 
+      email, 
+      phone, 
+      category, 
+      password: hashedPassword, 
+      subdomain, 
+      tin_number 
+    });
     res.status(201).json({ success: true, message: "Company added" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to add company" });
   }
 };
-
 export const updateCompany = async (req, res) => {
   const { name, email, phone, category, password ,subdomain } = req.body;
   try {
