@@ -1,4 +1,4 @@
-"use client"
+
 
 import { useState } from "react"
 import { Calendar, User, Stethoscope, CheckCircle, Star, Shield, Award } from "lucide-react"

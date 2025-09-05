@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
-import AppointmentBooking from '../UserFrontend/User'
-import Admin from '../AdminPages/Admin'
 import EnhancedAdmin from '../AdminPages/EnhancedAdmin'
 import Login from '../AdminPages/Adminlogin'
 
@@ -30,13 +28,6 @@ function App() {
           element={isAuthenticated ? <EnhancedAdmin onLogout={() => setIsAuthenticated(false)} /> : <Navigate to="/login" replace />} 
         />
         
-        <Route 
-          path="/basic-admin" 
-          element={isAuthenticated ? <Admin /> : <Navigate to="/login" replace />} 
-        />
-        
-        {/* Public route */}
-        <Route path="/booking" element={<AppointmentBooking />} />
         
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Navigate to="/login" replace />} />
