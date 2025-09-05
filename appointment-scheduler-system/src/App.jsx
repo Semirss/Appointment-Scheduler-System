@@ -1,19 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import AppointmentBooking from '../UserFrontend/User'
 import Admin from '../AdminPages/Admin'
 import EnhancedAdmin from '../AdminPages/EnhancedAdmin'
-import AdvancedLogin from '../AdminPages/Adminlogin'
 import Login from '../AdminPages/Adminlogin'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   
-  // Check if user is authenticated (you can enhance this with context/state management)
-  const isAuthenticated = localStorage.getItem('admin') || sessionStorage.getItem('admin')
+  // Check authentication status on component mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('admin') || sessionStorage.getItem('admin')
+    setIsAuthenticated(!!authStatus)
+  }, [])
 
   return (
     <Router>
@@ -22,17 +22,24 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         
         {/* Login route */}
-        <Route path="/login" element={<Login/>} />
+        <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
         
-        {/* Protected route - only accessible when authenticated */}
+        {/* Protected routes - only accessible when authenticated */}
         <Route 
-          path="/admin" 
-          element={isAuthenticated ? <EnhancedAdmin /> : <Navigate to="/login" replace />} 
+          path="/admin/*" 
+          element={isAuthenticated ? <EnhancedAdmin onLogout={() => setIsAuthenticated(false)} /> : <Navigate to="/login" replace />} 
         />
         
-        {/* Other routes */}
+        <Route 
+          path="/basic-admin" 
+          element={isAuthenticated ? <Admin /> : <Navigate to="/login" replace />} 
+        />
+        
+        {/* Public route */}
         <Route path="/booking" element={<AppointmentBooking />} />
-        <Route path="/basic-admin" element={<Admin />} />
+        
+        {/* Fallback for unknown routes */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   )

@@ -1,7 +1,5 @@
-"use client"
-
 import { useState } from "react"
-import { useNavigate } from "react-router-dom" // Add this import
+import { useNavigate } from "react-router-dom"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -11,7 +9,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
   
-  const navigate = useNavigate() // Add this hook
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,26 +27,25 @@ export default function Login() {
 
       const data = await response.json()
 
-    // In your Login component's handleSubmit function:
-if (data.success) {
-  console.log("Login successful:", data)
-  
-  // Store admin data
-    const adminData = {
-    email: data.admin.email,        
-    admin_id: data.admin.admin_id,  
-    initials: data.admin.email.charAt(0).toUpperCase()
-  }
-  
-  if (rememberMe) {
-    localStorage.setItem("admin", JSON.stringify(adminData))
-  } else {
-    sessionStorage.setItem("admin", JSON.stringify(adminData))
-  }
-  
-  // Redirect to admin dashboard
-  navigate("/admin")
-} else {
+      if (data.success) {
+        console.log("Login successful:", data)
+        
+        // Store admin data
+        const adminData = {
+          email: data.admin.email,        
+          admin_id: data.admin.admin_id,  
+          initials: data.admin.email.charAt(0).toUpperCase()
+        }
+        
+        if (rememberMe) {
+          localStorage.setItem("admin", JSON.stringify(adminData))
+        } else {
+          sessionStorage.setItem("admin", JSON.stringify(adminData))
+        }
+        
+        // Redirect to admin dashboard
+        navigate("/admin")
+      } else {
         setError(data.message || "Login failed")
       }
     } catch (error) {
