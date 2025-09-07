@@ -17,27 +17,27 @@ import ProtectedRoute from './routes/ProtectedRoute';
 function App() {
   // console.log(UserProvider);
   return (
-    <CustomizationProvider>
       <CompanyProvider>
-        <GlobalStyles />
-        <FontLoader />
-        <Router>
-          <Routes>
-            <Route path='/login' element={<CompanyLogin />}></Route>
-            {/* <Route path='/adminLogin' element={<Login />}></Route> */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <CompanyLayout />
-              </ProtectedRoute>
-            } />
-            <Route path="/adminCustomization" element={<AdminCustomization />} />
-            <Route path="/book-appointment" element={<AppointmentBooking />} />
-            {/* <Route path="/admin" element={<EnhancedAdmin />}></Route> */}
-            {/* <Route path="/admin" element={<Admin />} /> */}
-          </Routes>
-        </Router>
+        <CustomizationProvider>
+          <GlobalStyles />
+          <FontLoader />
+          <Router>
+            <Routes>
+              <Route path='/login' element={<CompanyLogin />}></Route>
+              {/* <Route path='/adminLogin' element={<Login />}></Route> */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <CompanyLayout />
+                </ProtectedRoute>
+              } />
+              <Route path="/adminCustomization" element={<AdminCustomization />} />
+              <Route path="/book-appointment" element={<AppointmentBooking />} />
+              {/* <Route path="/admin" element={<EnhancedAdmin />}></Route> */}
+              {/* <Route path="/admin" element={<Admin />} /> */}
+            </Routes>
+          </Router>
+        </CustomizationProvider>
       </CompanyProvider>
-    </CustomizationProvider>
   );
 }
 

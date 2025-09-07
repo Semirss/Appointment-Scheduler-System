@@ -19,7 +19,7 @@ const Header = ({ isCollapsed }) => {
             setIsLoading(true);
             setError(null);
 
-            const response = await axios.get("https://gravity.et/appointment_Backend/api/appointments/appointees/6", {
+            const response = await axios.get("https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/6", {
                 headers: {
                     "Content-Type": "application/json",
                 },

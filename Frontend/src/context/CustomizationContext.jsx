@@ -1,6 +1,7 @@
 // context/CustomizationContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCompany } from './CompanyContext';
 
 const CustomizationContext = createContext();
 
@@ -12,7 +13,12 @@ export const useCustomization = () => {
   return context;
 };
 
-export const CustomizationProvider = ({ children, companyId = 6 }) => {
+export const CustomizationProvider = ({ children}) => {
+  const { company } = useCompany();
+  // You can also get companyId from company context if needed
+  const companyId = company?.company_id;
+  console.log(companyId)
+
   const [customization, setCustomization] = useState({
     theme_background: '#FFFFFF',
     theme_text: '#1F2937',
@@ -35,7 +41,7 @@ export const CustomizationProvider = ({ children, companyId = 6 }) => {
   const fetchCustomization = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`https://gravity.et/appointment_Backend/api/customizations/${companyId}`);
+      const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${companyId}`);
       
       if (response.data.success && response.data.data) {
         const dbData = response.data.data;
@@ -67,7 +73,7 @@ export const CustomizationProvider = ({ children, companyId = 6 }) => {
   // Save customization to database
   const saveCustomizationToDB = async (newCustomization) => {
     try {
-      await axios.put(`https://gravity.et/appointment_Backend/api/customizations/${companyId}`, {
+      await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${companyId}`, {
         bg_color: newCustomization.theme_background,
         text_color: newCustomization.theme_text,
         btn_color: newCustomization.theme_button,

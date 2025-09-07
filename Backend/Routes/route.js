@@ -1,5 +1,5 @@
 import express from 'express';
-import { addCompany, deleteCompany, getCompanies, getCompanyBySubdomain, loginCompany, updateCompany } from '../Controllers/companiesController.js';
+import { addCompany, deleteCompany, getCompanies, getCompanyById, getCompanyByDomain, loginCompany, updateCompany } from '../Controllers/companiesController.js';
 import { addService, deleteService, getCompanyServices, getServices, updateService, updateServiceByCompany } from '../Controllers/servicesController.js';
 import { addAppointment, createAppointment, deleteAppointment, fetchAppointeesByCompany, fetchAppointeesByServiceInCompany, getAppointeeCountByCompany, getAppointeeCountByService, getAppointments, updateAppointment } from '../Controllers/appointmentController.js';
 import { addAddress, deleteAddress, getAddresses, getCompanyAddresses, updateAddress } from '../Controllers/addressController.js';
@@ -33,7 +33,8 @@ router.get("/user/phone/:phone", getUserByPhone);
 // Companies
 router.post("/companyLogin", loginCompany);
 router.get("/companies", getCompanies);
-router.get("/companies/subdomain/:subdomain", getCompanyBySubdomain);
+router.get("/company/:id", getCompanyById);
+router.get("/companies/domain/:domain", getCompanyByDomain);
 router.post("/companies", addCompany);
 router.put("/companies/:id", updateCompany);
 router.delete("/companies/:id", deleteCompany);

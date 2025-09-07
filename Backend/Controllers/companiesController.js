@@ -4,7 +4,8 @@ import {
   updateCompanyModel,
   deleteCompanyModel,
   findCompanyByEmail,
-  getCompanyBySubdomainModel,
+  getCompanyByID,
+  getCompanyByDomainModel,
 } from "../Models/companiesModel.js";
 
 import bcrypt from "bcrypt";
@@ -68,11 +69,10 @@ export const getCompanies = async (req, res) => {
   }
 };
 
-
-export const getCompanyBySubdomain = async (req, res) => {
+export const getCompanyById = async (req, res) => {
   try {
-    const { subdomain } = req.params;
-    const company = await getCompanyBySubdomainModel(subdomain);
+    const { id } = req.params;
+    const company = await getCompanyByID(id);
 
     if (!company) {
       return res.status(404).json({ success: false, message: "Company not found" });
@@ -80,17 +80,42 @@ export const getCompanyBySubdomain = async (req, res) => {
 
     res.status(200).json({ success: true, data: company });
   } catch (error) {
-    console.error("Error fetching company by subdomain:", error);
+    console.error("Error fetching company by domain:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+
+export const getCompanyByDomain = async (req, res) => {
+  try {
+    const { domain } = req.params;
+    const company = await getCompanyByDomainModel(domain);
+
+    if (!company) {
+      return res.status(404).json({ success: false, message: "Company not found" });
+    }
+
+    res.status(200).json({ success: true, data: company });
+  } catch (error) {
+    console.error("Error fetching company by domain:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 
 export const addCompany = async (req, res) => {
-  const { name, email, phone, category, password, subdomain } = req.body;
+  const { name, email, phone, category, password, domain, tin_number } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await addCompanyModel({ name, email, phone, category, password: hashedPassword, subdomain });
+    await addCompanyModel({ 
+      name, 
+      email, 
+      phone, 
+      category, 
+      password: hashedPassword, 
+      domain, 
+      tin_number 
+    });
     res.status(201).json({ success: true, message: "Company added" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to add company" });
@@ -98,13 +123,13 @@ export const addCompany = async (req, res) => {
 };
 
 export const updateCompany = async (req, res) => {
-  const { name, email, phone, category, password ,subdomain } = req.body;
+  const { name, email, phone, category, password ,domain } = req.body;
   try {
     let hashedPassword = null;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
-    await updateCompanyModel(req.params.id, { name, email, phone, category, password: hashedPassword, subdomain });
+    await updateCompanyModel(req.params.id, { name, email, phone, category, password: hashedPassword, domain });
     res.json({ success: true, message: "Company updated" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to update company" });

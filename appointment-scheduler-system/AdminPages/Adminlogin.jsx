@@ -17,7 +17,7 @@ export default function Login() {
     setError("")
 
     try {
-      const response = await fetch("http://localhost:5000/api/adminLogin", {
+      const response = await fetch("https://gravity.et/backend/api/adminLogin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -102,7 +102,7 @@ const ViewAppointment = () => {
       try {
         setLoading(true);
         // Fetch appointments for the specified appointee ID
-        const response = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
         setAppointments(response.data.data || []);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -113,7 +113,7 @@ const ViewAppointment = () => {
 
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(`https://gravity.et/appointment_Backend/api/addresses/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${companyId}`);
         setAvailableBranches(response.data.data || []);
       } catch (error) {
         console.error('Error fetching branches:', error);
@@ -122,7 +122,7 @@ const ViewAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`https://gravity.et/appointment_Backend/api/services`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/services`);
         setAvailableServices(response.data.data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -131,7 +131,7 @@ const ViewAppointment = () => {
 
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
         setAvailableClients(response.data.data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -272,10 +272,10 @@ const ViewAppointment = () => {
     };
 
     try {
-      await axios.put(`https://gravity.et/appointment_Backend/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
+      await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
       setShowRescheduleModal(false);
       // Refresh the appointments list
-      const response = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
+      const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
       setAppointments(response.data.data || []);
     } catch (error) {
       console.error('Error rescheduling appointment:', error);
@@ -342,14 +342,14 @@ const ViewAppointment = () => {
 
     try {
         console.log("Sending payload:", payload);
-        const response = await axios.post(`https://gravity.et/appointment_Backend/api/appointments/createAppointment`, payload);
+        const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
         setShowNewAppointmentModal(false);
         // Refresh the appointments list
-        const appointmentsResponse = await axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`);
+        const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
         setAppointments(appointmentsResponse.data.data || []);
         // Refresh clients list if a new client was created
         if (showNewClientForm) {
-        const clientsResponse = await axios.get(`https://gravity.et/appointment_Backend/api/users`);
+        const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
         setAvailableClients(clientsResponse.data.data || []);
         }
     } catch (error) {
@@ -379,7 +379,7 @@ const ViewAppointment = () => {
     setShowDropdown({}); // Close the dropdown
 
     try {
-      await axios.delete(`https://gravity.et/appointment_Backend/api/appointments/${id}`);
+      await axios.delete(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/${id}`);
       // Success is handled by the optimistic update
     } catch (error) {
       console.error('Error deleting appointment:', error);
