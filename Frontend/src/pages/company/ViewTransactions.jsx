@@ -54,7 +54,7 @@ const ViewTransactions = () => {
       
       try {
         const companyId = 6; // Using company ID 2 as specified
-        const response = await axios.get(`https://gravity.et/appointment_Backend/api/transactions/company/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/transactions/company/${companyId}`);
         
         // if (!response.ok) {
         //   throw new Error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);

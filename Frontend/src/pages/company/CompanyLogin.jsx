@@ -26,7 +26,7 @@ const CompanyLogin = () => {
 
     try {
       // Step 1: Attempt to log in the company
-      const loginResponse = await axios.post('https://gravity.et/appointment_Backend/api/companyLogin', formData);
+      const loginResponse = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/companyLogin', formData);
 
       // Step 2: Extract the company data directly from the login response
       const companyData = loginResponse.data.data;

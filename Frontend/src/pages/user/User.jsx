@@ -26,9 +26,11 @@ export default function AppointmentBooking() {
   const [loading, setLoading] = useState(false)
 
   // API base URL - make sure this matches your backend
-  // const API_BASE_URL = "https://gravity.et/appointment_Backend/api"
-  const subdomain = window.location.hostname.split('.')[0];
-  // console.log(subdomain)
+  // const API_BASE_URL = "https://test.dynamicrealestatemarketing.com/backend/api"
+  // const domain = window.location.hostname.split('.')[0];
+  const domain = window.location.host;
+  console.log(window.location.host);
+  // console.log(domain)
 
   // Apply customization styles
   const styles = {
@@ -96,8 +98,8 @@ export default function AppointmentBooking() {
       try {
         setLoading(true);
         
-        // First, fetch company by subdomain
-        const companyRes = await axios.get(`https://gravity.et/appointment_Backend/api/companies/subdomain/${subdomain}`);
+        // First, fetch company by domain
+        const companyRes = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/companies/domain/${domain}`);
         const companyData = companyRes.data.data;
         console.log(companyRes);
         setCompany(companyData);
@@ -106,21 +108,21 @@ export default function AppointmentBooking() {
         setFormData(prev => ({ ...prev, company_id: companyData.company_id }));
         
         // Now fetch services for this company
-        const servicesRes = await axios.get(`https://gravity.et/appointment_Backend/api/services/${companyData.company_id}`);
+        const servicesRes = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/services/${companyData.company_id}`);
         setServices(servicesRes.data.data || []);
         
       } catch (err) {
         console.error("Failed to fetch company or services:", err);
-        setError("Invalid subdomain or company not found. Please check the URL.");
+        setError("Invalid domain or company not found. Please check the URL.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (subdomain) {
+    if (domain) {
       fetchCompanyAndServices();
     }
-  }, [subdomain]);
+  }, [domain]);
 
   // Generate time slots based on selected service duration
   useEffect(() => {
@@ -190,7 +192,7 @@ export default function AppointmentBooking() {
       let clientId;
       
       // Create or get user
-      const userResponse = await fetch(`https://gravity.et/appointment_Backend/api/users`, {
+      const userResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -232,7 +234,7 @@ export default function AppointmentBooking() {
       
       console.log("Sending appointment data:", appointmentData);
       
-      const appointmentResponse = await fetch(`https://gravity.et/appointment_Backend/api/appointments`, {
+      const appointmentResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -27,6 +27,8 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useNavigate } from "react-router-dom"
 import AdminCustomization from "./AdminCustomization"
+import axios from 'axios';
+import { getCompanyApiUrl } from "../utils/apiHelpers"
 
 const AppointmentsCountChart = ({ appointments = [] }) => {
   const [chartData, setChartData] = useState([])
@@ -218,6 +220,8 @@ const EnhancedAdmin = () => {
   const [recentActivities, setRecentActivities] = useState([])
   const [adminData, setAdminData] = useState(null)
   const [editingCompanyId, setEditingCompanyId] = useState(null)
+  const [apiUrl, setApiUrl] = useState('');
+  const [companyID, setCompanyID] = useState(null);
   const navigate = useNavigate()
 
   // Get admin data from storage on component mount
@@ -240,7 +244,7 @@ useEffect(() => {
     try {
       setIsLoadingCompanies(true)
       setCompaniesError(null)
-      const response = await fetch("http://localhost:5000/api/companies")
+      const response = await fetch("https://gravity.et/backend/api/companies")
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -267,7 +271,7 @@ useEffect(() => {
   const fetchAppointments = async () => {
     try {
       setIsLoadingAppointments(true)
-      const response = await fetch("http://localhost:5000/api/appointments")
+      const response = await fetch("https://gravity.et/backend/api/appointments")
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -288,17 +292,60 @@ useEffect(() => {
     }
   }
 
-  const handleEditCompany = (companyId) => {
-    setEditingCompanyId(companyId)
+  const handleEditCompany = async (companyId) => {
+    setEditingCompanyId(companyId);
+
+    try {
+      // setLoading(true);
+      
+      const companyResponse = await axios.get(`https://gravity.et/backend/api/company/${companyId}`);
+
+      if (companyResponse.data.success && companyResponse.data.data) {
+        const companyData = companyResponse.data.data;
+        
+        const domain = companyData.domain;
+        console.log("Domain", domain);
+        
+        if (domain) {
+          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
+          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
+          const generatedApiUrl = getCompanyApiUrl(domain);
+
+          // use the domain to get the company_id to update the company
+          const domainResponse = await axios.get(`${generatedApiUrl}/companies/domain/${domain}`);
+          const fullCompanyData = domainResponse.data.data;
+          console.log("Full Company Data: ", fullCompanyData);
+
+          setCompanyID(fullCompanyData.company_id);
+          setApiUrl(generatedApiUrl);
+        } else {
+          setSaveError('Company domain not found');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+      setSaveError('Failed to load company details');
+    }
+    // finally {
+    //   setLoading(false);
+    // }
   }
+
+  console.log("Domain URL: ", apiUrl);
 
   const handleSaveCompany = async (companyId, updatedData) => {
     try {
+      console.log("CompanyID" ,companyID)
       if (!updatedData.password) {
         delete updatedData.password
       }
 
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      if (!apiUrl) {
+        alert("Error!! API URL not set.");
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/companies/${companyID}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -306,14 +353,23 @@ useEffect(() => {
         body: JSON.stringify(updatedData),
       })
 
-      if (!response.ok) {
+      const adminResponse = await fetch(`https://gravity.et/backend/api/companies/${companyId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      if (!response.ok || !adminResponse.ok) {
         const errorText = await response.text()
         console.error("Server response:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      if (result.success) {
+      const adminResult = await adminResponse.json()
+      if (result.success && adminResult.success) {
         fetchCompanies()
         setEditingCompanyId(null)
         updateRecentActivities("company_updated", updatedData.name)
@@ -324,28 +380,64 @@ useEffect(() => {
       console.error("Error updating company:", error)
       alert("Failed to update company: " + error.message)
     }
-  }
+  };
 
   const handleCancelEdit = () => {
     setEditingCompanyId(null)
   }
 
   const handleDeleteCompany = async (companyId) => {
+    // console.log(companyId)
     if (!confirm("Are you sure you want to delete this company?")) return
 
+    if (!apiUrl) {
+      alert("Error!! API URL not set.");
+      return;
+    }
+
     try {
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      const companyResponse = await axios.get(`https://gravity.et/backend/api/company/${companyId}`);
+
+      if (companyResponse.data.success && companyResponse.data.data) {
+        const companyData = companyResponse.data.data;
+        
+        const domain = companyData.domain;
+        console.log("Domain", domain);
+        
+        if (domain) {
+          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
+          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
+          const generatedApiUrl = getCompanyApiUrl(domain);
+
+          // use the domain to get the company_id to update the company
+          const domainResponse = await axios.get(`${generatedApiUrl}/companies/domain/${domain}`);
+          const fullCompanyData = domainResponse.data.data;
+          console.log("Full Company Data: ", fullCompanyData);
+
+          setCompanyID(fullCompanyData.company_id);
+          setApiUrl(generatedApiUrl);
+        } else {
+          setSaveError('Company domain not found');
+        }
+      }
+
+      const response = await fetch(`${apiUrl}/companies/${companyID}`, {
         method: "DELETE",
       })
 
-      if (!response.ok) {
+      const adminResponse = await fetch(`https://gravity.et/backend/api/companies/${companyId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok || !adminResponse.ok) {
         const errorText = await response.text()
         console.error("Server response:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      if (result.success) {
+      const adminResult = await adminResponse.json()
+      if (result.success && adminResult.success) {
         fetchCompanies()
         updateRecentActivities("company_deleted", { id: companyId })
       } else {
@@ -359,7 +451,7 @@ useEffect(() => {
 
   const handleViewCompany = async (companyId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/appointments/countByCompany/${companyId}`)
+      const response = await fetch(`https://gravity.et/backend/api/appointments/countByCompany/${companyId}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -805,11 +897,12 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     phone: "",
     category: "",
     password: "",
-    subdomain: "", // Added subdomain field
+    domain: "", // Added domain field
   })
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
+  // const [apiUrl, setApiUrl] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -828,7 +921,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.password) newErrors.password = "Password is required"
-    if (!formData.subdomain.trim()) newErrors.subdomain = "Subdomain is required" // Added validation
+    if (!formData.domain.trim()) newErrors.domain = "domain is required" // Added validation
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -841,11 +934,11 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
       newErrors.password = "Password must be at least 6 characters"
     }
 
-    // Subdomain validation (alphanumeric and hyphens only)
-    const subdomainRegex = /^[a-zA-Z0-9-]+$/
-    if (formData.subdomain && !subdomainRegex.test(formData.subdomain)) {
-      newErrors.subdomain = "Subdomain can only contain letters, numbers, and hyphens"
-    }
+    // domain validation (alphanumeric and hyphens only)
+    // const domainRegex = /^[a-zA-Z0-9-]+$/
+    // if (formData.domain && !domainRegex.test(formData.domain)) {
+    //   newErrors.domain = "domain can only contain letters, numbers, and hyphens"
+    // }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -859,7 +952,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch("http://localhost:5000/api/companies", {
+      const adminResponse = await fetch("https://gravity.et/backend/api/companies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -867,7 +960,18 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         body: JSON.stringify(formData),
       })
 
-      if (!response.ok) {
+      // Based on the formdata domain, generate the company-specific API URL
+      const generatedApiUrl = getCompanyApiUrl(formData.domain);
+
+      const response = await fetch(`${generatedApiUrl}/companies`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok || !adminResponse.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.message || `Server error: ${response.status}`)
       }
@@ -881,7 +985,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         phone: "",
         category: "",
         password: "",
-        subdomain: "", // Reset subdomain field
+        domain: "", // Reset domain field
       })
 
       if (onCompanyAdded) {
@@ -924,7 +1028,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
                 "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
-                "password": "password123", "subdomain": "company-name"
+                "password": "password123", "domain": "company-name"
                 {"}"}
               </code>
             </p>
@@ -1064,10 +1168,10 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                   )}
                 </div>
 
-                {/* New Subdomain Field */}
+                {/* New Domain Field */}
                 <div className="space-y-2">
-                  <label htmlFor="subdomain" className="block text-sm font-medium text-foreground">
-                    Subdomain <span className="text-destructive">*</span>
+                  <label htmlFor="domain" className="block text-sm font-medium text-foreground">
+                    Domain <span className="text-destructive">*</span>
                   </label>
                   <div className="flex">
                     <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-border bg-muted text-muted-foreground text-sm">
@@ -1075,23 +1179,23 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     </span>
                     <input
                       type="text"
-                      name="subdomain"
-                      id="subdomain"
-                      value={formData.subdomain}
+                      name="domain"
+                      id="domain"
+                      value={formData.domain}
                       onChange={handleChange}
                       className={`flex-1 px-4 py-3 bg-input border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
-                        errors.subdomain ? "border-destructive" : "border-border"
+                        errors.domain ? "border-destructive" : "border-border"
                       }`}
-                      placeholder="company-name"
+                      placeholder="company.example.com/url-path"
                     />
-                    <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
-                      .yourdomain.com
-                    </span>
+                    {/* <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
+                      .com
+                    </span> */}
                   </div>
-                  {errors.subdomain && (
+                  {errors.domain && (
                     <p className="text-sm text-destructive flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.subdomain}
+                      {errors.domain}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
@@ -1113,7 +1217,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     phone: "",
                     category: "",
                     password: "",
-                    subdomain: "", // Reset subdomain field
+                    domain: "", // Reset domain field
                   })
                   setErrors({})
                 }}

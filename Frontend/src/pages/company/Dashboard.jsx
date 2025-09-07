@@ -132,9 +132,9 @@ const Dashboard = () => {
 
       // Fetch all data in parallel
       const [usersResponse, appointmentsResponse, ratingsResponse] = await Promise.all([
-        axios.get('https://gravity.et/appointment_Backend/api/users'),
-        axios.get(`https://gravity.et/appointment_Backend/api/appointments/appointees/${companyId}`),
-        axios.get('https://gravity.et/appointment_Backend/api/ratings')
+        axios.get('https://test.dynamicrealestatemarketing.com/backend/api/users'),
+        axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`),
+        axios.get('https://test.dynamicrealestatemarketing.com/backend/api/ratings')
       ]);
 
       setUsers(usersResponse.data.data || []);
