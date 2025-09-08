@@ -271,7 +271,7 @@ useEffect(() => {
   const fetchAppointments = async () => {
     try {
       setIsLoadingAppointments(true)
-      const response = await fetch("https://gravity.et/backend/api/appointments")
+      const response = await fetch(`https://gravity.et/backend/api/appointments`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -596,10 +596,11 @@ useEffect(() => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-lg font-bold text-foreground">Gravity</h1>
+              <img
+                src="/public/Gravity Logo.png"
+                alt="Gravity Logo"
+                className="w-35 h-12 object-contain hover:scale-105 transition-transform ease-in-out ml-2 "
+              />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -897,7 +898,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     phone: "",
     category: "",
     password: "",
-    domain: "", // Added domain field
+    subdomain: "",
+    tin_number: "", // Added TIN number field
   })
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -921,7 +923,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.password) newErrors.password = "Password is required"
-    if (!formData.domain.trim()) newErrors.domain = "domain is required" // Added validation
+    if (!formData.domain.trim()) newErrors.domain = "domain is required"
+    if (!formData.tin_number.trim()) newErrors.tin_number = "TIN number is required"
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -932,6 +935,12 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     // Password validation
     if (formData.password && formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters"
+    }
+
+    // TIN number validation (alphanumeric only)
+    const tinRegex = /^[a-zA-Z0-9]+$/
+    if (formData.tin_number && !tinRegex.test(formData.tin_number)) {
+      newErrors.tin_number = "TIN number can only contain letters and numbers"
     }
 
     // domain validation (alphanumeric and hyphens only)
@@ -985,7 +994,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         phone: "",
         category: "",
         password: "",
-        domain: "", // Reset domain field
+        subdomain: "",
+        tin_number: "",
       })
 
       if (onCompanyAdded) {
@@ -1028,7 +1038,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
                 "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
-                "password": "password123", "domain": "company-name"
+                "password": "password123", "domain": "company-name", "tin_number": "TIN123456789"
                 {"}"}
               </code>
             </p>
@@ -1186,7 +1196,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                       className={`flex-1 px-4 py-3 bg-input border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
                         errors.domain ? "border-destructive" : "border-border"
                       }`}
-                      placeholder="company.example.com/url-path"
+                      placeholder="company.example.com"
                     />
                     {/* <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
                       .com
@@ -1200,6 +1210,33 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                   )}
                   <p className="text-xs text-muted-foreground">
                     Use only letters, numbers, and hyphens. No spaces or special characters.
+                  </p>
+                </div>
+
+                {/* New TIN Number Field */}
+                <div className="space-y-2">
+                  <label htmlFor="tin_number" className="block text-sm font-medium text-foreground">
+                    TIN Number <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="tin_number"
+                    id="tin_number"
+                    value={formData.tin_number}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-input border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
+                      errors.tin_number ? "border-destructive" : "border-border"
+                    }`}
+                    placeholder="Enter TIN number"
+                  />
+                  {errors.tin_number && (
+                    <p className="text-sm text-destructive flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.tin_number}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Tax Identification Number (letters and numbers only)
                   </p>
                 </div>
               </div>
@@ -1217,7 +1254,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     phone: "",
                     category: "",
                     password: "",
-                    domain: "", // Reset domain field
+                    subdomain: "",
+                    tin_number: "", // Reset TIN number field
                   })
                   setErrors({})
                 }}
