@@ -6,26 +6,31 @@ export const CompanyContext = createContext();
 export const useCompany = () => {
   const context = useContext(CompanyContext);
   if (!context) {
-    throw new Error('useCustomization must be used within a CompanyProvider');
+    throw new Error('useCompany must be used within a CompanyProvider');
   }
   return context;
 };
 
 export const CompanyProvider = ({ children }) => {
   const [company, setCompany] = useState(() => {
-    const storedCompany = localStorage.getItem('companyName');
-    return storedCompany ? storedCompany : null;
+    try {
+      // Retrieve the stored company data as a string
+      const storedCompany = localStorage.getItem('company');
+      // Parse the JSON string back into a JavaScript object
+      return storedCompany ? JSON.parse(storedCompany) : null;
+    } catch (error) {
+      console.error("Failed to parse company from localStorage:", error);
+      return null;
+    }
   });
-
-//   const [role, setRole] = useState(() => {
-//     const storedRole = localStorage.getItem('role');
-//     return storedRole ? storedRole : null;
-//   });
 
   useEffect(() => {
     if (company) {
-      localStorage.setItem('companyName', company);
-    //   localStorage.setItem('role', role)
+      // Stringify the entire company object before saving to localStorage
+      localStorage.setItem('company', JSON.stringify(company));
+    } else {
+      // Clear localStorage if the company state is null
+      localStorage.removeItem('company');
     }
   }, [company]);
 
@@ -35,4 +40,3 @@ export const CompanyProvider = ({ children }) => {
     </CompanyContext.Provider>
   );
 };
-

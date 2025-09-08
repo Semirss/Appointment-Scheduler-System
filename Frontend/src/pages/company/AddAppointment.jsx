@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaCalendarAlt, FaClock, FaUser, FaMapMarkerAlt, FaPhone, FaPlus, FaTimes } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const AddAppointment = () => {
   const { customization } = useCustomization(); // Get customization data
@@ -13,7 +14,9 @@ const AddAppointment = () => {
   const [appointmentError, setAppointmentError] = useState('');
 
   // Set a constant company ID to fetch addresses for
-  const companyId = 2;
+  // const companyId = 2;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   // State for the appointment form data
   const [formData, setFormData] = useState({
@@ -63,7 +66,7 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/addresses/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${companyId}`);
         setAvailableBranches(response.data.data || []);
       } catch (error) {
         console.error('Error fetching branches:', error);
@@ -72,7 +75,7 @@ const AddAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/services`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/services`);
         setAvailableServices(response.data.data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -81,7 +84,7 @@ const AddAppointment = () => {
 
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/users`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
         setAvailableClients(response.data.data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -160,7 +163,7 @@ const AddAppointment = () => {
 
     try {
       console.log("Sending payload:", payload);
-      const response = await axios.post(`http://localhost:5000/api/appointments/createAppointment`, payload);
+      const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
       
       // Show success message
       alert('Appointment created successfully!');
@@ -184,7 +187,7 @@ const AddAppointment = () => {
       
       // Refresh clients list if a new client was created
       if (showNewClientForm) {
-        const clientsResponse = await axios.get(`http://localhost:5000/api/users`);
+        const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
         setAvailableClients(clientsResponse.data.data || []);
       }
     } catch (error) {

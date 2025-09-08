@@ -1,16 +1,20 @@
 import express from 'express';
-import { addCompany, deleteCompany, getCompanies, getCompanyBySubdomain, loginCompany, updateCompany } from '../Controllers/companiesController.js';
+import { addCompany, deleteCompany, getCompanies, getCompanyById, getCompanyByDomain, loginCompany, updateCompany } from '../Controllers/companiesController.js';
 import { addService, deleteService, getCompanyServices, getServices, updateService, updateServiceByCompany } from '../Controllers/servicesController.js';
 import { addAppointment, createAppointment, deleteAppointment, fetchAppointeesByCompany, fetchAppointeesByServiceInCompany, getAppointeeCountByCompany, getAppointeeCountByService, getAppointments, updateAppointment } from '../Controllers/appointmentController.js';
 import { addAddress, deleteAddress, getAddresses, getCompanyAddresses, updateAddress } from '../Controllers/addressController.js';
 import { addSchedule, deleteSchedule, fetchCompanySchedule, getSchedules, updateSchedule } from '../Controllers/scheduleController.js';
 import { addTransaction, deleteTransaction, fetchTransactionById, fetchTransactionsByCompany, getTransactions, updateTransaction } from '../Controllers/transactionsController.js';
-import { addCustomization, deleteCustomization, getCustomizationByCompanyId, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
+import { addCustomization, deleteCustomization, getCustomizationByCompanyId, getCustomizations, lockCustomization, requestUnlock, unlockCustomization, updateCustomization } from '../Controllers/customizeController.js';
 import { loginAdmin, addAdmin } from '../Controllers/adminController.js';
 import { addUser, getUser, getUsers,getUserByPhone} from '../Controllers/userController.js';
 import { addRating, getRatings } from '../Controllers/ratingController.js';
 
 const router = express.Router();
+
+router.get('/', (req, res) => {
+  res.send('API root is working!');
+});
 
 // Admin login
 router.post("/adminLogin", loginAdmin);
@@ -29,7 +33,8 @@ router.get("/user/phone/:phone", getUserByPhone);
 // Companies
 router.post("/companyLogin", loginCompany);
 router.get("/companies", getCompanies);
-router.get("/companies/subdomain/:subdomain", getCompanyBySubdomain);
+router.get("/company/:id", getCompanyById);
+router.get("/companies/domain/:domain", getCompanyByDomain);
 router.post("/companies", addCompany);
 router.put("/companies/:id", updateCompany);
 router.delete("/companies/:id", deleteCompany);
@@ -81,6 +86,9 @@ router.get('/customizations/:companyId', getCustomizationByCompanyId);
 router.post("/customizations", addCustomization);
 router.put("/customizations/:companyId", updateCustomization);
 router.delete("/customizations/:id", deleteCustomization);
+router.post('/customizations/request-unlock', requestUnlock);
+router.post('/customizations/unlock', unlockCustomization);
+router.post('/customizations/lock', lockCustomization);
 
 // Rating
 router.post("/ratings", addRating);

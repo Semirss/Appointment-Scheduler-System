@@ -4,10 +4,15 @@ import {
   updateCompanyModel,
   deleteCompanyModel,
   findCompanyByEmail,
-  getCompanyBySubdomainModel,
+  getCompanyByID,
+  getCompanyByDomainModel,
 } from "../Models/companiesModel.js";
 
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export const loginCompany = async (req, res) => {
   try {
@@ -23,14 +28,23 @@ export const loginCompany = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    // Optional: JWT token logic
-    // const token = jwt.sign(
-    //   { company_id: company.company_id, email: company.email },
-    //   process.env.JWT_SECRET,
-    //   { expiresIn: "1d" }
-    // );
+    // Generate JWT token
+    const token = jwt.sign(
+      { company_id: company.company_id, email: company.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
-    // res.status(200).json({ success: true, token });
+    // Set cookie
+    res.cookie("company_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false, // HTTPS only in prod
+      sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+
+    // Send response
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -39,14 +53,12 @@ export const loginCompany = async (req, res) => {
         name: company.name,
         phone: company.phone,
         category: company.category
-        // token // optionally include token here
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Login failed" });
   }
 };
-
 
 export const getCompanies = async (req, res) => {
   try {
@@ -57,11 +69,10 @@ export const getCompanies = async (req, res) => {
   }
 };
 
-
-export const getCompanyBySubdomain = async (req, res) => {
+export const getCompanyById = async (req, res) => {
   try {
-    const { subdomain } = req.params;
-    const company = await getCompanyBySubdomainModel(subdomain);
+    const { id } = req.params;
+    const company = await getCompanyByID(id);
 
     if (!company) {
       return res.status(404).json({ success: false, message: "Company not found" });
@@ -69,7 +80,24 @@ export const getCompanyBySubdomain = async (req, res) => {
 
     res.status(200).json({ success: true, data: company });
   } catch (error) {
-    console.error("Error fetching company by subdomain:", error);
+    console.error("Error fetching company by domain:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+
+export const getCompanyByDomain = async (req, res) => {
+  try {
+    const { domain } = req.params;
+    const company = await getCompanyByDomainModel(domain);
+
+    if (!company) {
+      return res.status(404).json({ success: false, message: "Company not found" });
+    }
+
+    res.status(200).json({ success: true, data: company });
+  } catch (error) {
+    console.error("Error fetching company by domain:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
@@ -94,13 +122,13 @@ export const addCompany = async (req, res) => {
   }
 };
 export const updateCompany = async (req, res) => {
-  const { name, email, phone, category, password ,subdomain } = req.body;
+  const { name, email, phone, category, password ,domain } = req.body;
   try {
     let hashedPassword = null;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
-    await updateCompanyModel(req.params.id, { name, email, phone, category, password: hashedPassword, subdomain });
+    await updateCompanyModel(req.params.id, { name, email, phone, category, password: hashedPassword, domain });
     res.json({ success: true, message: "Company updated" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to update company" });

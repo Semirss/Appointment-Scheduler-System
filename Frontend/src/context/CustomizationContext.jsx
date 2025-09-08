@@ -1,6 +1,7 @@
 // context/CustomizationContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCompany } from './CompanyContext';
 
 const CustomizationContext = createContext();
 
@@ -12,7 +13,10 @@ export const useCustomization = () => {
   return context;
 };
 
-export const CustomizationProvider = ({ children, companyId = 2 }) => {
+export const CustomizationProvider = ({ children }) => {
+  const { company } = useCompany();
+  const companyId = company?.company_id;
+
   const [customization, setCustomization] = useState({
     theme_background: '#FFFFFF',
     theme_text: '#1F2937',
@@ -27,16 +31,20 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
     font_family: 'Inter',
     font_size_base: '16px',
     font_heading: 'Inter',
-    // description: ''
+    status: 'locked'
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch customization from database
   const fetchCustomization = async () => {
+    if (!companyId) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/customizations/${companyId}`);
-      
+      const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${companyId}`);
+
       if (response.data.success && response.data.data) {
         const dbData = response.data.data;
         setCustomization({
@@ -53,21 +61,19 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
           font_family: dbData.font_family || 'Inter',
           font_size_base: dbData.font_size_base || '16px',
           font_heading: dbData.font_heading || dbData.font_family || 'Inter',
-        //   description: dbData.description || ''
+          status: dbData.status || 'locked'
         });
       }
     } catch (error) {
       console.error('Error fetching customization:', error);
-      // Use default values if fetch fails
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Save customization to database
   const saveCustomizationToDB = async (newCustomization) => {
     try {
-      await axios.put(`http://localhost:5000/api/customizations/${companyId}`, {
+      const response = await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${companyId}`, {
         bg_color: newCustomization.theme_background,
         text_color: newCustomization.theme_text,
         btn_color: newCustomization.theme_button,
@@ -81,40 +87,83 @@ export const CustomizationProvider = ({ children, companyId = 2 }) => {
         font_family: newCustomization.font_family,
         font_size_base: newCustomization.font_size_base,
         font_heading: newCustomization.font_heading,
-        // description: newCustomization.description
+        status: newCustomization.status
       });
+
+      if (response.data.success) {
+        return { success: true };
+      } else {
+        return { success: false, message: response.data.message || 'Unknown error' };
+      }
     } catch (error) {
       console.error('Error saving customization:', error);
-      throw new Error('Failed to save customization to database');
+      return { success: false, message: 'Failed to save to database' };
     }
   };
 
-  // Load customization from database on initial load
-  useEffect(() => {
-    fetchCustomization();
-  }, [companyId]);
+  // New function to handle the lock status
+  const lockCustomization = async () => {
+    if (!companyId) return;
 
-  const updateCustomization = async (newCustomization) => {
+    // Save the current state to a variable
+    const prevCustomization = customization;
+    // Optimistically update the local state
+    setCustomization(prev => ({ ...prev, status: 'locked' }));
+
     try {
-      // Update local state immediately for responsive UI
-      setCustomization(newCustomization);
-      
-      // Save to database in the background
-      await saveCustomizationToDB(newCustomization);
+      const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/lock`, {
+        company_id: companyId,
+      });
+
+      if (!response.data.success) {
+        console.error('Database lock failed:', response.data.message);
+        throw new Error('Database lock failed');
+      }
     } catch (error) {
-      console.error('Error updating customization:', error);
-      // Revert local state if database save fails
-      fetchCustomization(); // Reload from database
+      console.error('Error locking status:', error);
+      // Revert local state if save fails
+      setCustomization(prevCustomization);
       throw error;
     }
   };
 
+  const updateCustomization = async (newCustomization) => {
+    if (!companyId) return;
+
+    // Optimistically update local state for responsive UI
+    setCustomization(newCustomization);
+
+    // Save to database
+    const result = await saveCustomizationToDB(newCustomization);
+    if (!result.success) {
+      console.error('Error updating customization:', result.message);
+      // Revert local state if database save fails
+      fetchCustomization();
+      throw new Error(result.message);
+    }
+  };
+
+  // Old updateStatus function, now just a simple router
+  const updateStatus = async (newStatus) => {
+    if (newStatus === 'locked') {
+      return await lockCustomization();
+    }
+    // You can add an 'unlocked' case here if needed
+  };
+
+  useEffect(() => {
+    if (companyId) {
+      fetchCustomization();
+    }
+  }, [companyId]);
+
   return (
-    <CustomizationContext.Provider value={{ 
-      customization, 
+    <CustomizationContext.Provider value={{
+      customization,
       updateCustomization,
+      updateStatus,
       isLoading,
-      refreshCustomization: fetchCustomization 
+      refreshCustomization: fetchCustomization
     }}>
       {children}
     </CustomizationContext.Provider>

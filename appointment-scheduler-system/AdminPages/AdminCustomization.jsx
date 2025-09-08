@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { FaPalette, FaImage, FaSave, FaBuilding, FaSpinner, FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import axios from 'axios';
+import { getCompanyApiUrl } from '../utils/apiHelpers';
 
 const AdminCustomization = () => {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
+  const [apiUrl, setApiUrl] = useState('');
+  // const host = window.location.host;
+  // const apiUrl = getCompanyApiUrl(host);
+  // console.log(apiUrl)
+  
   const [customization, setCustomization] = useState({
     theme_background: '#FFFFFF',
     theme_text: '#1F2937',
@@ -44,6 +50,8 @@ const AdminCustomization = () => {
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
   const [loading, setLoading] = useState(true);
+  const [domain, setDomain] = useState('');
+  const [companyId, setCompanyId] = useState(null);
 
   // Predefined color options
   const colorOptions = [
@@ -54,106 +62,241 @@ const AdminCustomization = () => {
   ];
 
   // Fetch companies from backend
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setLoading(true);
-        // For demo purposes, we'll create mock companies if the API fails
-        const mockCompanies = [
-          { company_id: 1, name: 'Company One' },
-          { company_id: 2, name: 'Company Two' },
-          { company_id: 3, name: 'Company Three' }
-        ];
+  // useEffect(() => {
+  //   const fetchCompanies = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const mockCompanies = [
+  //         { company_id: 1, name: 'Company One' },
+  //         { company_id: 2, name: 'Company Two' },
+  //         { company_id: 3, name: 'Company Three' }
+  //       ];
         
-        try {
-          const response = await axios.get('http://localhost:5000/api/companies');
-          setCompanies(response.data.data || mockCompanies);
-        } catch (error) {
-          console.error('API Error, using mock companies:', error);
-          setCompanies(mockCompanies);
-        }
-      } catch (error) {
-        console.error('Error fetching companies:', error);
-        setSaveError('Failed to load companies');
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       try {
+  //         const response = await axios.get(`https://gravity.et/backend/api/companies`);
+  //         const companiesData = response.data.data
+  //         setCompanies(companiesData);
 
-    fetchCompanies();
+  //         const foundCompany = companiesData.find(company => company.company_id === parseInt(selectedCompany));
+  //         console.log("foundCompany, ", foundCompany);
+
+  //         if (foundCompany) {
+  //           setDomain(foundCompany.domain);
+  //           console.log("Domain set to:", foundCompany.domain);
+  //         } else {
+  //           console.error("No company found for this selected ID.");
+  //           setDomain(null);
+  //         }
+          
+  //       } catch (error) {
+  //         console.error('API Error, using mock companies:', error);
+  //         setCompanies(mockCompanies);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching companies:', error);
+  //       setSaveError('Failed to load companies');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchCompanies();
+  // }, [selectedCompany]);
+
+  // useEffect(() => {
+  //   const fetchCompanyIdByDomain = async () => {
+  //     if (!domain || !apiUrl) return;
+  //     console.log(domain)
+
+  //     try {
+  //       const response = await axios.get(`${apiUrl}/companies/domain/${domain}`);
+  //       console.log("ID", response.data.data.company_id);
+  //       if (response.data.success && response.data.data) {
+  //         setCompanyId(response.data.data.company_d);
+  //       } else {
+  //         console.error(`Company not found for domain: ${domain}`);
+  //         setCompanyId(null);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching company by domain:', error);
+  //       setCompanyId(null);
+  //     }
+  //   };
+
+  //   fetchCompanyIdByDomain();
+  // }, [domain, apiUrl]);
+
+  // useEffect(() => {
+  //   console.log("ID:  ", companyId);
+  //   const fetchCompanyCustomization = async () => {
+  //     if (!companyId) return;
+
+  //     try {
+  //       setLoading(true);
+        
+  //       try {
+  //         const response = await axios.get(`${apiUrl}/customizations/${companyId}`);
+
+  //         if (response.data.success && response.data.data) {
+  //           const dbData = response.data.data;
+            // setCustomization({
+            //   theme_background: dbData.bg_color || '#FFFFFF',
+            //   theme_text: dbData.text_color || '#1F2937',
+            //   theme_button: dbData.btn_color || '#3B82F6',
+            //   theme_card: dbData.card_color || '#F8FAFC',
+            //   sidebar_bg: dbData.sidebar_bg_color || '#FFFFFF',
+            //   sidebar_text: dbData.sidebar_text_color || '#1F2937',
+            //   header_bg: dbData.header_bg_color || '#FFFFFF',
+            //   header_text: dbData.header_text_color || '#1F2937',
+            //   logo_url: dbData.logo_url || '',
+            //   banner_image: dbData.banner_image || '',
+            //   font_family: dbData.font_family || 'Inter',
+            //   font_size_base: dbData.font_size_base || '16px',
+            //   font_heading: dbData.font_heading || dbData.font_family || 'Inter',
+            // });
+  //           setPreviewLogo(dbData.logo_url || '');
+  //           setPreviewBanner(dbData.banner_image || '');
+  //         } else {
+  //           resetToDefaults();
+  //         }
+  //       } catch (error) {
+  //         console.error('API Error, using default customization:', error);
+  //         resetToDefaults();
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching customization:', error);
+  //       resetToDefaults();
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+    // const resetToDefaults = () => {
+    //   setCustomization({
+    //     theme_background: '#FFFFFF',
+    //     theme_text: '#1F2937',
+    //     theme_button: '#3B82F6',
+    //     theme_card: '#F8FAFC',
+    //     sidebar_bg: '#FFFFFF',
+    //     sidebar_text: '#1F2937',
+    //     header_bg: '#FFFFFF',
+    //     header_text: '#1F2937',
+    //     logo_url: '',
+    //     banner_image: '',
+    //     font_family: 'Inter',
+    //     font_size_base: '16px',
+    //     font_heading: 'Inter',
+    //   });
+    //   setPreviewLogo('');
+    //   setPreviewBanner('');
+    // };
+
+  //   fetchCompanyCustomization();
+  // }, [companyId, apiUrl]);
+
+  // A dedicated useEffect to fetch the list of all companies once on mount
+  useEffect(() => {
+      const fetchAllCompanies = async () => {
+          try {
+              setLoading(true);
+              const response = await axios.get(`https://gravity.et/backend/api/companies`);
+              setCompanies(response.data.data);
+          } catch (error) {
+              console.error('Error fetching company list:', error);
+              // Fallback to mock data if API fails
+              setCompanies([
+                  { company_id: 1, name: 'Company One' },
+                  { company_id: 2, name: 'Company Two' },
+                  { company_id: 3, name: 'Company Three' }
+              ]);
+          } finally {
+              setLoading(false);
+          }
+      };
+      fetchAllCompanies();
   }, []);
 
-  // Load customization when company is selected
+  // A separate useEffect to fetch customization based on the selected company
   useEffect(() => {
-    const fetchCompanyCustomization = async () => {
-      if (!selectedCompany) return;
-
-      try {
-        setLoading(true);
-        
-        // Try to fetch from API, fall back to defaults if it fails
-        try {
-          const response = await axios.get(`http://localhost:5000/api/customizations/${selectedCompany}`);
-          
-          if (response.data.success && response.data.data) {
-            const dbData = response.data.data;
-            setCustomization({
-              theme_background: dbData.bg_color || '#FFFFFF',
-              theme_text: dbData.text_color || '#1F2937',
-              theme_button: dbData.btn_color || '#3B82F6',
-              theme_card: dbData.card_color || '#F8FAFC',
-              sidebar_bg: dbData.sidebar_bg_color || '#FFFFFF',
-              sidebar_text: dbData.sidebar_text_color || '#1F2937',
-              header_bg: dbData.header_bg_color || '#FFFFFF',
-              header_text: dbData.header_text_color || '#1F2937',
-              logo_url: dbData.logo_url || '',
-              banner_image: dbData.banner_image || '',
-              font_family: dbData.font_family || 'Inter',
-              font_size_base: dbData.font_size_base || '16px',
-              font_heading: dbData.font_heading || dbData.font_family || 'Inter',
-              // description: dbData.description || ''
-            });
-            setPreviewLogo(dbData.logo_url || '');
-            setPreviewBanner(dbData.banner_image || '');
-          } else {
-            // Reset to defaults if no customization exists
-            resetToDefaults();
+      const fetchCompanyCustomization = async () => {
+          // This check is now appropriate because the dropdown list is already populated.
+          if (!selectedCompany) {
+              return;
           }
-        } catch (error) {
-          console.error('API Error, using default customization:', error);
-          resetToDefaults();
-        }
-      } catch (error) {
-        console.error('Error fetching customization:', error);
-        resetToDefaults();
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    const resetToDefaults = () => {
-      setCustomization({
-        theme_background: '#FFFFFF',
-        theme_text: '#1F2937',
-        theme_button: '#3B82F6',
-        theme_card: '#F8FAFC',
-        sidebar_bg: '#FFFFFF',
-        sidebar_text: '#1F2937',
-        header_bg: '#FFFFFF',
-        header_text: '#1F2937',
-        logo_url: '',
-        banner_image: '',
-        font_family: 'Inter',
-        font_size_base: '16px',
-        font_heading: 'Inter',
-        // description: ''
-      });
-      setPreviewLogo('');
-      setPreviewBanner('');
-    };
+          try {
+              setLoading(true);
 
-    fetchCompanyCustomization();
-  }, [selectedCompany]);
+              // Fetch domain, companyId, and customization data
+              const companiesResponse = await axios.get(`https://gravity.et/backend/api/companies`);
+              const companiesData = companiesResponse.data.data;
+              const foundCompany = companiesData.find(company => company.company_id === parseInt(selectedCompany));
+
+              if (foundCompany) {
+                  // Now proceed with your existing logic to get company details and customizations
+                  const companyDetailsResponse = await axios.get(`${apiUrl}/companies/domain/${foundCompany.domain}`);
+                  const companyDetailsData = companyDetailsResponse.data.data;
+                  setCompanyId(companyDetailsData.company_id);
+
+                  const customizationResponse = await axios.get(`${apiUrl}/customizations/${companyDetailsData.company_id}`);
+                  
+                  // --- Start of the rest of your customization setting logic ---
+                  if (customizationResponse.data.success && customizationResponse.data.data) {
+                      const dbData = customizationResponse.data.data;
+                      setCustomization({
+                          theme_background: dbData.bg_color || '#FFFFFF',
+                          theme_text: dbData.text_color || '#1F2937',
+                          theme_button: dbData.btn_color || '#3B82F6',
+                          theme_card: dbData.card_color || '#F8FAFC',
+                          sidebar_bg: dbData.sidebar_bg_color || '#FFFFFF',
+                          sidebar_text: dbData.sidebar_text_color || '#1F2937',
+                          header_bg: dbData.header_bg_color || '#FFFFFF',
+                          header_text: dbData.header_text_color || '#1F2937',
+                          logo_url: dbData.logo_url || '',
+                          banner_image: dbData.banner_image || '',
+                          font_family: dbData.font_family || 'Inter',
+                          font_size_base: dbData.font_size_base || '16px',
+                          font_heading: dbData.font_heading || dbData.font_family || 'Inter',
+                      });
+                      setPreviewLogo(dbData.logo_url || '');
+                      setPreviewBanner(dbData.banner_image || '');
+                  } else {
+                      resetToDefaults();
+                  }
+              } else {
+                  console.error("No company found for selected ID.");
+                  resetToDefaults();
+              }
+          } catch (error) {
+              console.error('Error in customization fetch flow:', error);
+              resetToDefaults();
+          } finally {
+              setLoading(false);
+          }
+      };
+      
+      const resetToDefaults = () => {
+          setCustomization({
+              theme_background: '#FFFFFF',
+              theme_text: '#1F2937',
+              theme_button: '#3B82F6',
+              theme_card: '#F8FAFC',
+              sidebar_bg: '#FFFFFF',
+              sidebar_text: '#1F2937',
+              header_bg: '#FFFFFF',
+              header_text: '#1F2937',
+              logo_url: '',
+              banner_image: '',
+              font_family: 'Inter',
+              font_size_base: '16px',
+              font_heading: 'Inter',
+          });
+          setPreviewLogo('');
+          setPreviewBanner('');
+      };
+
+      fetchCompanyCustomization();
+  }, [selectedCompany, apiUrl]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -196,7 +339,7 @@ const AdminCustomization = () => {
   };
 
   const handleSaveCustomization = async () => {
-    if (!selectedCompany) {
+    if (!selectedCompany || !apiUrl) {
       setSaveError('Please select a company first');
       return;
     }
@@ -208,7 +351,7 @@ const AdminCustomization = () => {
     try {
       // Try to save to API, but don't fail completely if API is down
       try {
-        await axios.put(`http://localhost:5000/api/customizations/${selectedCompany}`, {
+        await axios.put(`${apiUrl}/customizations/${companyId}`, {
           bg_color: customization.theme_background,
           text_color: customization.theme_text,
           btn_color: customization.theme_button,
@@ -240,10 +383,49 @@ const AdminCustomization = () => {
     }
   };
 
-  const handleCompanyChange = (e) => {
-    setSelectedCompany(e.target.value);
+  // const handleCompanyChange = (e) => {
+  //   setSelectedCompany(e.target.value);
+  //   setSaveError('');
+  //   setSaveSuccess('');
+  // };
+
+  const handleCompanyChange = async (e) => {
+    const companyId = e.target.value;
+    setSelectedCompany(companyId);
     setSaveError('');
     setSaveSuccess('');
+    
+    if (!companyId) {
+      setApiUrl('');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const companyResponse = await axios.get(`https://gravity.et/backend/api/company/${companyId}`);
+
+      if (companyResponse.data.success && companyResponse.data.data) {
+        const companyData = companyResponse.data.data;
+        
+        const domain = companyData.domain;
+        // console.log(domain);
+        
+        if (domain) {
+          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
+          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
+          const generatedApiUrl = getCompanyApiUrl(domain);
+          setApiUrl(generatedApiUrl);
+        } else {
+          setSaveError('Company domain not found');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+      setSaveError('Failed to load company details');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading && !selectedCompany) {

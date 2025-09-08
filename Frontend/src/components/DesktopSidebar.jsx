@@ -51,7 +51,7 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-3 border-b`} style={{ borderColor: `${customization.theme_button}20` }}>
         {!isCollapsed && (
           <span className="text-sm font-bold tracking-wide" style={fontStyle}>
-            {company}
+            {company.name}
           </span>
         )}
         <button 
@@ -61,8 +61,8 @@ const DesktopSidebar = ({ setActiveTab, isCollapsed, setIsCollapsed, activeTab }
             color: customization.sidebar_text,
             backgroundColor: 'transparent'
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
-          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+          // onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
+          // onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
         >
           {isCollapsed ? <FaBars className="text-xl" /> : <FaChevronLeft className="text-xl" />}
         </button>

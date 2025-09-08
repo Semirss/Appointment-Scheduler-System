@@ -1,9 +1,8 @@
 "use client"
 import { useState, useEffect, useContext } from "react"
-import { Calendar, User, Stethoscope, CheckCircle } from "lucide-react"
+import { Calendar, User, Stethoscope, CheckCircle, MapPin } from "lucide-react"
 import { useCustomization } from "../../context/CustomizationContext";
 import axios from "axios";
-
 
 export default function AppointmentBooking() {
   const { customization } = useCustomization();
@@ -18,6 +17,7 @@ export default function AppointmentBooking() {
   })
 
   const [company, setCompany] = useState(null);
+  const [companyAddress, setCompanyAddress] = useState(null);
   const [services, setServices] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -25,10 +25,9 @@ export default function AppointmentBooking() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
 
-  // API base URL - make sure this matches your backend
-  const API_BASE_URL = "http://localhost:5000"
-  const subdomain = window.location.hostname.split('.')[0];
-  // console.log(subdomain)
+  const domain = window.location.host;
+  console.log(window.location.host);
+  // console.log(domain)
 
   // Apply customization styles
   const styles = {
@@ -96,31 +95,40 @@ export default function AppointmentBooking() {
       try {
         setLoading(true);
         
-        // First, fetch company by subdomain
-        const companyRes = await axios.get(`${API_BASE_URL}/api/companies/subdomain/${subdomain}`);
+        // First, fetch company by domain
+        const companyRes = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/companies/domain/${domain}`);
         const companyData = companyRes.data.data;
-        console.log(companyRes);
         setCompany(companyData);
         
         // Set company_id in formData
         setFormData(prev => ({ ...prev, company_id: companyData.company_id }));
         
+        // Fetch company addresses
+        try {
+          const addressesRes = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${companyData.company_id}`);
+          if (addressesRes.data.data && addressesRes.data.data.length > 0) {
+            setCompanyAddress(addressesRes.data.data[0]);
+          }
+        } catch (addressError) {
+          console.error("Failed to fetch addresses:", addressError);
+        }
+        
         // Now fetch services for this company
-        const servicesRes = await axios.get(`${API_BASE_URL}/api/services/${companyData.company_id}`);
+        const servicesRes = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/services/${companyData.company_id}`);
         setServices(servicesRes.data.data || []);
         
       } catch (err) {
         console.error("Failed to fetch company or services:", err);
-        setError("Invalid subdomain or company not found. Please check the URL.");
+        setError("Invalid domain or company not found. Please check the URL.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (subdomain) {
+    if (domain) {
       fetchCompanyAndServices();
     }
-  }, [subdomain]);
+  }, [domain]);
 
   // Generate time slots based on selected service duration
   useEffect(() => {
@@ -173,6 +181,7 @@ export default function AppointmentBooking() {
 
   const selectedService = services.find(s => s.service_id == formData.service_id)
 
+  // Update the handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -188,9 +197,21 @@ export default function AppointmentBooking() {
     
     try {
       let clientId;
+      let addressId = null;
+      
+      // Get company addresses first
+      const addressesResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${formData.company_id}`);
+      
+      if (addressesResponse.ok) {
+        const addressesData = await addressesResponse.json();
+        // Use the first address if available
+        if (addressesData.data && addressesData.data.length > 0) {
+          addressId = addressesData.data[0].address_id;
+        }
+      }
       
       // Create or get user
-      const userResponse = await fetch(`${API_BASE_URL}/api/users`, {
+      const userResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -199,7 +220,8 @@ export default function AppointmentBooking() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
-          telegram_id: null
+          telegram_id: null,
+          address: formData.address || null // Add address field if needed
         }),
       });
       
@@ -228,11 +250,12 @@ export default function AppointmentBooking() {
         start_time: formatDateTimeForMySQL(startTime),
         end_time: formatDateTimeForMySQL(endTime),
         status: "scheduled",
+        address_id: addressId // Add address_id to appointment
       };
       
       console.log("Sending appointment data:", appointmentData);
       
-      const appointmentResponse = await fetch(`${API_BASE_URL}/api/appointments`, {
+      const appointmentResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,6 +351,16 @@ export default function AppointmentBooking() {
                 <span className="text-sm" style={styles.text}>
                   <strong>Price:</strong> ${selectedService.price}
                   {selectedService.discount > 0 && ` (${selectedService.discount}% off)`}
+                </span>
+              </div>
+            )}
+            {/* Add address display if available */}
+            {companyAddress && (
+              <div className="flex items-center gap-3">
+                <MapPin className="w-4 h-4" style={{ color: customization.theme_button }} />
+                <span className="text-sm" style={styles.text}>
+                  <strong>Location:</strong> {companyAddress.location}
+                  {companyAddress.branch_name && ` - ${companyAddress.branch_name}`}
                 </span>
               </div>
             )}
@@ -462,14 +495,14 @@ export default function AppointmentBooking() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <label className="text-sm font-medium" style={styles.text}>
                       Company
                     </label>
                     <div className="w-full rounded-xl px-4 py-3" style={styles.muted}>
                       <p className="text-sm" style={styles.text}>{company.name}</p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             )}

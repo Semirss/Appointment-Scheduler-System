@@ -12,9 +12,15 @@ const getCompaniesModel = async () => {
   return result;
 };
 
-export const getCompanyBySubdomainModel = async (subdomain) => {
-  const sql = `SELECT company_id, name, subdomain, email, category FROM companies WHERE subdomain = ? LIMIT 1`;
-  const [rows] = await mySqlConnection.query(sql, [subdomain]);
+const getCompanyByID = async (id) => {
+  const sql = `SELECT company_id, name, domain, email, category FROM companies WHERE company_id = ? LIMIT 1`;
+  const [rows] = await mySqlConnection.query(sql, [id]);
+  return rows[0]; // return single company or undefined
+};
+
+const getCompanyByDomainModel = async (domain) => {
+  const sql = `SELECT company_id, name, domain, email, category FROM companies WHERE domain = ? LIMIT 1`;
+  const [rows] = await mySqlConnection.query(sql, [domain]);
   return rows[0]; // return single company or undefined
 };
 
@@ -41,17 +47,17 @@ const updateCompanyModel = async (id, data) => {
   if (data.password) {
     sql = `
       UPDATE companies
-      SET name = ?, email = ?, phone = ?, category = ?, password = ?, subdomain = ?
+      SET name = ?, email = ?, phone = ?, category = ?, password = ?, domain = ?
       WHERE company_id = ?
     `;
-    params = [data.name, data.email, data.phone, data.category, data.password, data.subdomain, id];
+    params = [data.name, data.email, data.phone, data.category, data.password, data.domain, id];
   } else {
     sql = `
       UPDATE companies
-      SET name = ?, email = ?, phone = ?, category = ?, subdomain = ?
+      SET name = ?, email = ?, phone = ?, category = ?, domain = ?
       WHERE company_id = ?
     `;
-    params = [data.name, data.email, data.phone, data.category, data.subdomain, id];
+    params = [data.name, data.email, data.phone, data.category, data.domain, id];
   }
 
   await mySqlConnection.query(sql, params);
@@ -66,6 +72,8 @@ const deleteCompanyModel = async (id) => {
 export {
   getCompaniesModel,
   findCompanyByEmail,
+  getCompanyByDomainModel,
+  getCompanyByID,
   addCompanyModel,
   updateCompanyModel,
   deleteCompanyModel

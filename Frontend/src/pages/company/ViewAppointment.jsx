@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 
 const ViewAppointment = () => {
@@ -89,9 +90,11 @@ const ViewAppointment = () => {
   const dropdownRef = useRef(null);
 
   // Set a constant appointee ID for this component
-  const appointeeId = 2;
+  // const appointeeId = 25;
   // Set a constant company ID to fetch addresses for
-  const companyId = 2;
+  // const companyId = 6;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   const generateRandomId = () => {
     return Math.floor(Math.random() * 1000000) + 1;
@@ -102,7 +105,7 @@ const ViewAppointment = () => {
       try {
         setLoading(true);
         // Fetch appointments for the specified appointee ID
-        const response = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
         setAppointments(response.data.data || []);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -113,7 +116,7 @@ const ViewAppointment = () => {
 
     const fetchBranches = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/addresses/${companyId}`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${companyId}`);
         setAvailableBranches(response.data.data || []);
       } catch (error) {
         console.error('Error fetching branches:', error);
@@ -122,7 +125,7 @@ const ViewAppointment = () => {
     
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/services`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/services`);
         setAvailableServices(response.data.data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -131,7 +134,7 @@ const ViewAppointment = () => {
 
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/users`);
+        const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
         setAvailableClients(response.data.data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
@@ -142,7 +145,7 @@ const ViewAppointment = () => {
     fetchBranches();
     fetchServices();
     fetchClients();
-  }, [appointeeId, companyId]);
+  }, [companyId]);
   
   // Effect to handle clicks outside of the dropdown to close it
   useEffect(() => {
@@ -272,10 +275,10 @@ const ViewAppointment = () => {
     };
 
     try {
-      await axios.put(`http://localhost:5000/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
+      await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/${selectedAppointment.appointment_id}`, updatedData);
       setShowRescheduleModal(false);
       // Refresh the appointments list
-      const response = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
+      const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
       setAppointments(response.data.data || []);
     } catch (error) {
       console.error('Error rescheduling appointment:', error);
@@ -342,15 +345,15 @@ const ViewAppointment = () => {
 
     try {
         console.log("Sending payload:", payload);
-        const response = await axios.post(`http://localhost:5000/api/appointments/createAppointment`, payload);
-        setShowNewAppointmentModal(false);
+        const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
+          setShowNewAppointmentModal(false);
         // Refresh the appointments list
-        const appointmentsResponse = await axios.get(`http://localhost:5000/api/appointments/appointees/${companyId}`);
-        setAppointments(appointmentsResponse.data.data || []);
+        const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
+          setAppointments(appointmentsResponse.data.data || []);
         // Refresh clients list if a new client was created
         if (showNewClientForm) {
-        const clientsResponse = await axios.get(`http://localhost:5000/api/users`);
-        setAvailableClients(clientsResponse.data.data || []);
+        const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
+          setAvailableClients(clientsResponse.data.data || []);
         }
     } catch (error) {
         console.error('Error creating new appointment:', error);
@@ -379,7 +382,7 @@ const ViewAppointment = () => {
     setShowDropdown({}); // Close the dropdown
 
     try {
-      await axios.delete(`http://localhost:5000/api/appointments/${id}`);
+      await axios.delete(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/${id}`);
       // Success is handled by the optimistic update
     } catch (error) {
       console.error('Error deleting appointment:', error);
@@ -490,7 +493,7 @@ const ViewAppointment = () => {
                       </button>
                       {showDropdown[appointment.appointment_id] && (
                         // Positioned below the button and aligned to the left
-                        <div className="absolute left-0 top-full mt-2 z-10 w-48 bg-red-500 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="absolute right-0 top-full mt-2 z-10 w-48 bg-red-500 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <button
                             onClick={() => handleDeleteAppointment(appointment.appointment_id)}
                             className="w-full text-left px-4 py-2 text-sm text-white hover:bg-red-600"
