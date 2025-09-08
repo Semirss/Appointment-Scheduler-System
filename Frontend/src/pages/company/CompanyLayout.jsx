@@ -62,7 +62,7 @@ const CompanyLayout = () => {
         <Header 
           isCollapsed={isCollapsed} 
         />
-        <main className="flex-1 p-8 mt-16" style={{ backgroundColor: customization.theme_background }}>
+        <main className="flex-1 p-4 sm:p-6 md:p-8 mt-16 pb-16" style={{ backgroundColor: customization.theme_background }}>
           {renderContent()}
         </main>
       </div>
