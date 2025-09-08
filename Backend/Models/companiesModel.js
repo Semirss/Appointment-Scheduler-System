@@ -27,7 +27,7 @@ const getCompanyByDomainModel = async (domain) => {
 
 const addCompanyModel = async (data) => {
   const sql = `
-    INSERT INTO companies (name, email, phone, category, password, domain, tin_number)
+    INSERT INTO companies (name, email, phone, category, password, subdomain, tin_number)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   await mySqlConnection.query(sql, [
@@ -36,7 +36,7 @@ const addCompanyModel = async (data) => {
     data.phone,
     data.category,
     data.password,
-    data.domain,
+    data.subdomain,
     data.tin_number || null // Handle cases where tin_number might be undefined
   ]);
 };

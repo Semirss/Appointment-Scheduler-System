@@ -15,6 +15,7 @@ const Header = ({ isCollapsed }) => {
     const [error, setError] = useState(null);
     const { company } = useCompany();
     const companyId = company?.company_id;
+
     const lastCheckedRef = useRef(new Date());
 
     const fetchAppointments = useCallback(async () => {

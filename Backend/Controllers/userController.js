@@ -68,7 +68,8 @@ export const addUser = async (req, res) => {
       name, 
       email, 
       phone, 
-      telegram_id
+      telegram_id,
+      address
     });
     
     // Get the newly created user
