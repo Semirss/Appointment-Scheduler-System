@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaCalendarAlt, FaClock, FaUser, FaMapMarkerAlt, FaPhone, FaPlus, FaTimes } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const AddAppointment = () => {
   const { customization } = useCustomization(); // Get customization data
@@ -13,7 +14,9 @@ const AddAppointment = () => {
   const [appointmentError, setAppointmentError] = useState('');
 
   // Set a constant company ID to fetch addresses for
-  const companyId = 2;
+  // const companyId = 2;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   // State for the appointment form data
   const [formData, setFormData] = useState({
