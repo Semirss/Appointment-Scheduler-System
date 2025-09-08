@@ -5,7 +5,7 @@ import { addAppointment, createAppointment, deleteAppointment, fetchAppointeesBy
 import { addAddress, deleteAddress, getAddresses, getCompanyAddresses, updateAddress } from '../Controllers/addressController.js';
 import { addSchedule, deleteSchedule, fetchCompanySchedule, getSchedules, updateSchedule } from '../Controllers/scheduleController.js';
 import { addTransaction, deleteTransaction, fetchTransactionById, fetchTransactionsByCompany, getTransactions, updateTransaction } from '../Controllers/transactionsController.js';
-import { addCustomization, deleteCustomization, getCustomizationByCompanyId, getCustomizations, updateCustomization } from '../Controllers/customizeController.js';
+import { addCustomization, deleteCustomization, getCustomizationByCompanyId, getCustomizations, lockCustomization, requestUnlock, unlockCustomization, updateCustomization } from '../Controllers/customizeController.js';
 import { loginAdmin, addAdmin } from '../Controllers/adminController.js';
 import { addUser, getUser, getUsers,getUserByPhone} from '../Controllers/userController.js';
 import { addRating, getRatings } from '../Controllers/ratingController.js';
@@ -86,6 +86,9 @@ router.get('/customizations/:companyId', getCustomizationByCompanyId);
 router.post("/customizations", addCustomization);
 router.put("/customizations/:companyId", updateCustomization);
 router.delete("/customizations/:id", deleteCustomization);
+router.post('/customizations/request-unlock', requestUnlock);
+router.post('/customizations/unlock', unlockCustomization);
+router.post('/customizations/lock', lockCustomization);
 
 // Rating
 router.post("/ratings", addRating);

@@ -4,7 +4,10 @@ import {
   getCustomizationByCompanyIdModel,
   addCustomizationModel,
   updateCustomizationModel,
-  deleteCustomizationModel
+  deleteCustomizationModel,
+  requestUnlockModel,
+  lockCustomizationModel,
+  unlockCustomizationModel
 } from "../Models/customizeModel.js";
 
 export const getCustomizations = async (req, res) => {
@@ -51,5 +54,35 @@ export const deleteCustomization = async (req, res) => {
     res.json({ success: true, message: "Customization deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to delete customization" });
+  }
+};
+
+export const requestUnlock = async (req, res) => {
+  const { company_id } = req.body;
+  try {
+    await requestUnlockModel(company_id);
+    res.status(200).json({ success: true, message: 'Unlock request sent to admin.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to request unlock.' });
+  }
+};
+
+export const unlockCustomization = async (req, res) => {
+  const { company_id } = req.body;
+  try {
+    await unlockCustomizationModel(company_id);
+    res.status(200).json({ success: true, message: 'Theme unlocked for editing.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to unlock theme.' });
+  }
+};
+
+export const lockCustomization = async (req, res) => {
+  const { company_id } = req.body;
+  try {
+    await lockCustomizationModel(company_id);
+    res.status(200).json({ success: true, message: 'Theme locked after editing.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to lock theme.' });
   }
 };

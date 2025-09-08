@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaSearch, FaFilter, FaDownload, FaEye, FaCalendarAlt, FaReceipt, FaClock, FaUser, FaBuilding } from 'react-icons/fa';
 import axios from 'axios';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const ViewTransactions = () => {
   const { customization } = useCustomization(); // Get customization data
@@ -14,6 +15,7 @@ const ViewTransactions = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [error, setError] = useState(null);
+  const { company } = useCompany();
 
   // Apply the customized colors
   const containerStyle = {
@@ -53,7 +55,8 @@ const ViewTransactions = () => {
       setError(null);
       
       try {
-        const companyId = 6; // Using company ID 2 as specified
+        // const companyId = 6; // Using company ID 2 as specified
+        const companyId = company?.company_id;
         const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/transactions/company/${companyId}`);
         
         // if (!response.ok) {

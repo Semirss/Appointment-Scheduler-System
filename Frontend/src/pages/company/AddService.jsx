@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaDollarSign, FaClock, FaPlus, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const AddService = () => {
   const { customization } = useCustomization();
@@ -10,7 +11,9 @@ const AddService = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Set a constant company ID
-  const companyId = 2;
+  // const companyId = 2;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   // State for the service form data
   const [formData, setFormData] = useState({

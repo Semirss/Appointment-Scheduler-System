@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useCustomization } from '../../context/CustomizationContext';
+import { useCompany } from '../../context/CompanyContext';
 
 
 const ViewAppointment = () => {
@@ -91,7 +92,9 @@ const ViewAppointment = () => {
   // Set a constant appointee ID for this component
   // const appointeeId = 25;
   // Set a constant company ID to fetch addresses for
-  const companyId = 6;
+  // const companyId = 6;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   const generateRandomId = () => {
     return Math.floor(Math.random() * 1000000) + 1;
@@ -343,14 +346,14 @@ const ViewAppointment = () => {
     try {
         console.log("Sending payload:", payload);
         const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
-        setShowNewAppointmentModal(false);
+          setShowNewAppointmentModal(false);
         // Refresh the appointments list
         const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
-        setAppointments(appointmentsResponse.data.data || []);
+          setAppointments(appointmentsResponse.data.data || []);
         // Refresh clients list if a new client was created
         if (showNewClientForm) {
         const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
-        setAvailableClients(clientsResponse.data.data || []);
+          setAvailableClients(clientsResponse.data.data || []);
         }
     } catch (error) {
         console.error('Error creating new appointment:', error);
@@ -490,7 +493,7 @@ const ViewAppointment = () => {
                       </button>
                       {showDropdown[appointment.appointment_id] && (
                         // Positioned below the button and aligned to the left
-                        <div className="absolute left-0 top-full mt-2 z-10 w-48 bg-red-500 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="absolute right-0 top-full mt-2 z-10 w-48 bg-red-500 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <button
                             onClick={() => handleDeleteAppointment(appointment.appointment_id)}
                             className="w-full text-left px-4 py-2 text-sm text-white hover:bg-red-600"
