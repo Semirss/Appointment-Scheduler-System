@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FaBell, FaSearch, FaTimes, FaCalendarAlt, FaUser, FaCog, FaClock, FaFilter, FaSync } from 'react-icons/fa';
 import { useCustomization } from '../context/CustomizationContext';
 import axios from "axios";
+import { useCompany } from '../context/CompanyContext';
 
 const Header = ({ isCollapsed }) => {
     const { customization } = useCustomization();
@@ -11,6 +12,8 @@ const Header = ({ isCollapsed }) => {
     const [filterStatus, setFilterStatus] = useState('All');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { company } = useCompany();
+    const companyId = company?.company_id;
 
     const lastCheckedRef = useRef(new Date());
 
@@ -19,7 +22,7 @@ const Header = ({ isCollapsed }) => {
             setIsLoading(true);
             setError(null);
 
-            const response = await axios.get("https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/6", {
+            const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`, {
                 headers: {
                     "Content-Type": "application/json",
                 },

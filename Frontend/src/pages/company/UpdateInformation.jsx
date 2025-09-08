@@ -1,16 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaLock, FaUnlock, FaPalette, FaImage, FaSave, FaPaperPlane, FaInfoCircle, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
+import axios from 'axios';
+import { useCompany } from '../../context/CompanyContext';
 
 const UpdateInformation = () => {
-  const { customization, updateCustomization, isLoading: contextLoading } = useCustomization();
-  const [isLocked, setIsLocked] = useState(true);
-  const [requestSent, setRequestSent] = useState(false);
+  const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading } = useCustomization();
+  const { company } = useCompany();
+  
+  // Derive states directly from customization.status
+  const isLocked = customization.status === 'locked';
+  const requestSent = customization.status === 'unlock_requested';
+  const isUnlocked = customization.status === 'unlocked';
+  
   const [previewLogo, setPreviewLogo] = useState('');
   const [previewBanner, setPreviewBanner] = useState('');
   const [activeColorPicker, setActiveColorPicker] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
+  const pollingIntervalRef = useRef(null);
+
+  // Load initial data
+  useEffect(() => {
+    setPreviewLogo(customization.logo_url);
+    setPreviewBanner(customization.banner_image);
+  }, [customization.logo_url, customization.banner_image]);
+
+    // Polling effect to check for status changes
+  useEffect(() => {
+    // Only start polling if request is sent and waiting for approval
+    if (requestSent) {
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${company.company_id}`);
+          
+          if (response.data.success && response.data.data) {
+            const currentStatus = response.data.data.status;
+            
+            // If status has changed from unlock_requested to unlocked
+            if (currentStatus === 'unlocked' && customization.status === 'unlock_requested') {
+              // Refresh the customization data
+              await refreshCustomization();
+              // Clear the interval since we got the status change
+              clearInterval(pollingIntervalRef.current);
+            }
+            
+            // If status has changed from unlocked to locked (admin manually locked it)
+            if (currentStatus === 'locked' && customization.status === 'unlocked') {
+              await refreshCustomization();
+              clearInterval(pollingIntervalRef.current);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling for status update:', error);
+        }
+      }, 5000); // Check every 5 seconds
+    }
+
+    // Cleanup function to clear interval when component unmounts or status changes
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [requestSent, customization.status, company.company_id, refreshCustomization]);
 
   // Predefined color options
   const colorOptions = [
@@ -20,7 +74,7 @@ const UpdateInformation = () => {
     '#F8FAFC', '#F1F5F9', '#E2E8F0'
   ];
 
-   const fontOptions = [
+  const fontOptions = [
     { name: 'Inter', value: 'Inter' },
     { name: 'Roboto', value: 'Roboto' },
     { name: 'Open Sans', value: 'Open Sans' },
@@ -39,10 +93,12 @@ const UpdateInformation = () => {
   ];
 
   // Load initial data
-  useEffect(() => {
-    setPreviewLogo(customization.logo_url);
-    setPreviewBanner(customization.banner_image);
-  }, [customization]);
+  // useEffect(() => {
+  //   setPreviewLogo(customization.logo_url);
+  //   setPreviewBanner(customization.banner_image);
+  //   setIsLocked(customization.status === 'locked');
+  //   setRequestSent(customization.status === 'unlock_requested');
+  // }, [customization]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -92,29 +148,72 @@ const UpdateInformation = () => {
     }
   };
 
-  const handleRequestAccess = () => {
-    setTimeout(() => {
-      setRequestSent(true);
-      setTimeout(() => {
-        setIsLocked(false);
-        setRequestSent(false);
-      }, 3000);
-    }, 1000);
+  const handleRequestAccess = async () => {
+    try {
+      const response = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock', {
+        company_id: company.company_id
+      });
+
+      console.log(response.data);
+      
+      // Only update if the API call was successful
+      if (response.data.success) {
+        // Update the context to reflect the new status
+        updateCustomization({
+          ...customization,
+          status: 'unlock_requested'
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to request unlock');
+      }
+    } catch (error) {
+      setSaveError(error.response?.data?.message || 'Failed to send unlock request');
+    }
   };
 
+  // const handleLockCustomization = async () => {
+  //   try {
+  //     setLockLoading(true);
+  //     const response = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/customizations/lock', {
+  //       company_id: company.company_id
+  //     });
+      
+  //     // Only update if the API call was successful
+  //     if (response.data.success) {
+  //       // Update the context to reflect the new status
+  //       updateCustomization({
+  //         ...customization,
+  //         status: 'locked'
+  //       });
+  //       setIsLocked(true);
+  //     } else {
+  //       throw new Error(response.data.message || 'Failed to lock customization');
+  //     }
+  //   } catch (error) {
+  //     setSaveError(error.response?.data?.message || 'Failed to lock customization');
+  //   } finally {
+  //     setLockLoading(false);
+  //   }
+  // };
+
   const handleSaveChanges = async () => {
-    if (isLocked) return;
-    
+    if (customization.status === 'locked') return;
+
     setSaveLoading(true);
     setSaveError('');
-    
+    setSaveSuccess('');
+
     try {
-      await updateCustomization(customization);
-      alert('Changes saved successfully to database!');
+        await updateCustomization(customization);
+        await updateStatus('locked'); 
+        
+        setSaveSuccess('Changes saved successfully and customization locked!');
+
     } catch (error) {
-      setSaveError('Failed to save changes to database');
+        // This catch block handles errors from both updateCustomization and updateStatus.
+        setSaveError('Failed to save changes to database');
     } finally {
-      setSaveLoading(false);
+        setSaveLoading(false);
     }
   };
 
@@ -147,6 +246,13 @@ const UpdateInformation = () => {
           </div>
         )}
 
+        {/* Success Msg */}
+        {saveSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-700">{saveSuccess}</p>
+          </div>
+        )}
+
         {/* Lock Banner - Only show when locked */}
         {isLocked && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
@@ -164,7 +270,7 @@ const UpdateInformation = () => {
                 </p>
                 <button
                   onClick={handleRequestAccess}
-                  disabled={requestSent}
+                  disabled={requestSent || isUnlocked} // Disable if request is already sent or already unlocked
                   className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   <FaPaperPlane />
@@ -180,8 +286,8 @@ const UpdateInformation = () => {
           </div>
         )}
 
-        {/* Unlocked Status - Show when admin grants access */}
-        {!isLocked && (
+        {/* Unlocked Status - Show when admin grants access (only when status is 'unlocked') */}
+        {isUnlocked && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
@@ -191,9 +297,29 @@ const UpdateInformation = () => {
                 <h3 className="text-lg font-semibold text-green-800 mb-2">
                   Customization Unlocked
                 </h3>
-                <p className="text-green-700">
+                <p className="text-green-700 mb-4">
                   You now have permission to customize your company's appearance. 
                   Changes will be saved to the database.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Request Pending Status - Show when status is 'unlock_requested' */}
+        {requestSent && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <FaInfoCircle className="text-blue-600 text-2xl mt-1" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                  Request Pending
+                </h3>
+                <p className="text-blue-700">
+                  Your request to unlock customization has been sent to the administrator. 
+                  Please wait for approval.
                 </p>
               </div>
             </div>
@@ -437,7 +563,7 @@ const UpdateInformation = () => {
             Customization Settings
           </h2>
 
-          <div className={`space-y-6 ${isLocked ? 'opacity-75 pointer-events-none' : ''}`}>
+          <div className={`space-y-6 ${isLocked || requestSent ? 'opacity-75 pointer-events-none' : ''}`}>
             {/* Theme Colors with Pickers */}
             <div>
               <label className="block text-sm font-medium mb-3">
@@ -683,7 +809,7 @@ const UpdateInformation = () => {
                     accept="image/*"
                     onChange={(e) => handleImageUpload(e, 'logo')}
                     className="hidden"
-                    disabled={isLocked}
+                    disabled={isLocked || requestSent}
                   />
                 </label>
               </div>
@@ -719,7 +845,7 @@ const UpdateInformation = () => {
                     accept="image/*"
                     onChange={(e) => handleImageUpload(e, 'banner')}
                     className="hidden"
-                    disabled={isLocked}
+                    disabled={isLocked || requestSent}
                   />
                 </label>
               </div>
@@ -746,7 +872,7 @@ const UpdateInformation = () => {
                         borderColor: `${customization.theme_button}20`,
                         fontFamily: customization.font_family
                         }}
-                        disabled={isLocked}
+                        disabled={isLocked || requestSent}
                     >
                         {fontOptions.map(font => (
                         <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
@@ -772,7 +898,7 @@ const UpdateInformation = () => {
                         borderColor: `${customization.theme_button}20`,
                         fontFamily: customization.font_heading
                         }}
-                        disabled={isLocked}
+                        disabled={isLocked || requestSent}
                     >
                         {fontOptions.map(font => (
                         <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
@@ -798,7 +924,7 @@ const UpdateInformation = () => {
                         borderColor: `${customization.theme_button}20`,
                         fontSize: customization.font_size_base
                         }}
-                        disabled={isLocked}
+                        disabled={isLocked || requestSent}
                     >
                         {fontSizeOptions.map(size => (
                         <option key={size.value} value={size.value}>
@@ -832,29 +958,29 @@ const UpdateInformation = () => {
 
             {/* Save Button */}
             <div className="pt-4 border-t" style={{ borderColor: `${customization.theme_button}20` }}>
-              <button
-                onClick={handleSaveChanges}
-                disabled={isLocked || saveLoading}
-                className="px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                style={{ 
-                  backgroundColor: customization.theme_button,
-                  color: getContrastColor(customization.theme_button)
-                }}
-                onMouseOver={(e) => e.target.style.opacity = '0.9'}
-                onMouseOut={(e) => e.target.style.opacity = '1'}
-              >
-                {saveLoading ? (
-                  <>
-                    <FaSpinner className="animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FaSave />
-                    Save Changes
-                  </>
-                )}
-              </button>
+            <button
+              onClick={handleSaveChanges}
+              disabled={isLocked || requestSent || saveLoading} // Add requestSent to disabled condition
+              className="px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              style={{ 
+                backgroundColor: customization.theme_button,
+                color: getContrastColor(customization.theme_button)
+              }}
+              onMouseOver={(e) => e.target.style.opacity = '0.9'}
+              onMouseOut={(e) => e.target.style.opacity = '1'}
+            >
+              {saveLoading ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <FaSave />
+                  Save Changes
+                </>
+              )}
+            </button>
             </div>
           </div>
 
@@ -886,7 +1012,7 @@ const UpdateInformation = () => {
   );
 };
 
-// Color Picker Component
+// Color Picker Component (remains the same)
 const ColorPicker = ({ currentColor, onSelect, onClose }) => {
   const { customization } = useCustomization();
   const colorOptions = [

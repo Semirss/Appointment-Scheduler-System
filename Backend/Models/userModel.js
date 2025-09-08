@@ -48,14 +48,15 @@ const getUserByPhoneModel = async (phone) => {
 };
 const addUserModel = async (data) => {
   const sql = `
-    INSERT INTO users (name, email, phone, telegram_id)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO users (name, email, phone, telegram_id, address)
+    VALUES (?, ?, ?, ?, ?)
   `;
   const [result] = await mySqlConnection.query(sql, [
     data.name,
     data.email,
     data.phone || null,
-    data.telegram_id || null
+    data.telegram_id || null,
+    data.address || null
   ]);
   return result;
 };
