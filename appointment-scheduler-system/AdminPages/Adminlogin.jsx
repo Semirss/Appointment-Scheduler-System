@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -11,19 +11,41 @@ export default function Login() {
   
   const navigate = useNavigate()
 
+  const checkServerHealth = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/health", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      return response.ok
+    } catch (error) {
+      return false
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
+   
+
     try {
-      const response = await fetch("https://gravity.et/backend/api/adminLogin", {
+      const response = await fetch("http://localhost:5000/api/adminLogin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       })
+
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Server error: ${response.status} - ${errorText}`)
+      }
 
       const data = await response.json()
 
@@ -43,14 +65,23 @@ export default function Login() {
           sessionStorage.setItem("admin", JSON.stringify(adminData))
         }
         
+        // Call the onLogin callback to update authentication state
+        if (onLogin) {
+          onLogin()
+        }
+        
         // Redirect to admin dashboard
         navigate("/admin")
       } else {
-        setError(data.message || "Login failed")
+        setError(data.message || "Login failed. Please check your credentials.")
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("Network error. Please try again.")
+      if (error.message.includes('Failed to fetch')) {
+        setError("Cannot connect to server. Please check if the backend is running on port 5000.")
+      } else {
+        setError(error.message || "Network error. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -81,7 +112,22 @@ export default function Login() {
           <div className="px-8 py-8">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                {error}
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {error}
+                </div>
+                {error.includes('Cannot connect to server') && (
+                  <div className="mt-2 text-xs">
+                    <p>Please ensure:</p>
+                    <ul className="list-disc list-inside ml-2">
+                      <li>Backend server is running on port 5000</li>
+                      <li>No firewall is blocking the connection</li>
+                      <li>You're using the correct server URL</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
             
@@ -100,6 +146,7 @@ export default function Login() {
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-slate-50 text-slate-900 placeholder-slate-400"
                     placeholder="admin@company.com"
                     required
+                    disabled={isLoading}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,11 +175,13 @@ export default function Login() {
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-slate-50 text-slate-900 placeholder-slate-400"
                     placeholder="Enter your password"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,12 +220,14 @@ export default function Login() {
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 text-indigo-600 bg-slate-50 border-slate-300 rounded focus:ring-indigo-500 focus:ring-2"
+                    disabled={isLoading}
                   />
                   <span className="ml-2 text-sm text-slate-600">Remember me</span>
                 </label>
                 <button
                   type="button"
                   className="text-sm text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
+                  disabled={isLoading}
                 >
                   Forgot password?
                 </button>

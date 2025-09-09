@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   BarChart3,
   Building2,
@@ -28,186 +27,126 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useNavigate } from "react-router-dom"
 import AdminCustomization from "./AdminCustomization"
 
-const AppointmentsCountChart = ({ appointments = [] }) => {
-  const [chartData, setChartData] = useState([])
-
+// Custom hook to handle click outside
+const useClickOutside = (ref, callback) => {
   useEffect(() => {
-    if (appointments.length) {
-      // Get all appointment dates
-      const appointmentDates = appointments
-        .filter(appointment => appointment.created_at)
-        .map(appointment => {
-          const date = new Date(appointment.created_at)
-          return date.toISOString().slice(0, 10) // YYYY-MM-DD format
-        })
-      
-      // Find the earliest and latest dates
-      const uniqueDates = [...new Set(appointmentDates)].sort()
-      
-      if (uniqueDates.length === 0) {
-        setChartData([])
-        return
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        callback();
       }
+    };
+    
+    document.addEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [ref, callback]);
+};
 
-      const earliestDate = new Date(uniqueDates[0])
-      const latestDate = new Date(uniqueDates[uniqueDates.length - 1])
-      
-      // Create date range from earliest to latest appointment
-      const daysData = []
-      const currentDate = new Date(earliestDate)
-      
-      while (currentDate <= latestDate) {
-        const dateKey = currentDate.toISOString().slice(0, 10)
-        const dayName = currentDate.toLocaleDateString("en-US", { weekday: "short" })
-        const dateFormatted = currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+// Notification Bell Component
+const NotificationBell = ({ recentActivities, onMarkAsRead }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [unreadActivities, setUnreadActivities] = useState(recentActivities);
+  const dropdownRef = useRef(null);
+  
+  useClickOutside(dropdownRef, () => setIsOpen(false));
+  
+  // Update unread activities when recent activities change
+  useEffect(() => {
+    setUnreadActivities(recentActivities);
+  }, [recentActivities]);
 
-        // Count appointments for this day
-        const count = appointments.filter((appointment) => {
-          if (!appointment.created_at) return false
-          const appointmentDate = new Date(appointment.created_at)
-          return appointmentDate.toISOString().slice(0, 10) === dateKey
-        }).length
+  // Helper function to format time difference
+  const formatTimeDifference = (timestamp) => {
+    if (!timestamp) return "Just now";
+    
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(timestamp)) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
 
-        daysData.push({
-          day: dayName,
-          date: dateFormatted,
-          fullDate: dateKey,
-          appointments: count,
-        })
-
-        // Move to next day
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      // If we have too many days, show only the last 14 days for better visibility
-      const limitedData = daysData.length > 14 ? daysData.slice(-14) : daysData
-      
-      setChartData(limitedData)
-    } else {
-      setChartData([])
-    }
-  }, [appointments])
-
-  if (chartData.length === 0) {
-    return (
-      <div className="h-72 flex flex-col items-center justify-center bg-gradient-to-br from-card to-muted/30 rounded-2xl p-5 border border-border">
-        <Calendar className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
-        <p className="text-muted-foreground font-medium text-sm">No appointment data available</p>
-        <p className="text-xs text-muted-foreground mt-1">Appointments will appear here once scheduled</p>
-      </div>
-    )
-  }
-
-  // Calculate stats for the chart header
-  const totalAppointments = chartData.reduce((sum, day) => sum + day.appointments, 0)
-  const averagePerDay = totalAppointments / chartData.length
-  const peakDay = chartData.reduce((max, day) => day.appointments > max.appointments ? day : max, chartData[0])
+  const handleMarkAsRead = () => {
+    setUnreadActivities([]);
+    onMarkAsRead();
+  };
 
   return (
-    <div className="bg-card   p-" style={{ transform: 'scale(0.91)', transformOrigin: 'top center' }}>
-      {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
-        <div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {chartData.length} day{chartData.length !== 1 ? 's' : ''} • {totalAppointments} total appointments
-          </p>
-        </div>
-        <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Avg per day</p>
-            <p className="text-xs font-semibold text-foreground">{averagePerDay.toFixed(1)}</p>
-          </div>
-          <div className="w-px h-5 bg-border" />
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Peak day</p>
-            <p className="text-xs font-semibold text-foreground">{peakDay.appointments} on {peakDay.day}</p>
-          </div>
-        </div>
-      </div>
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        className="relative p-2 hover:bg-muted rounded-lg transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Notifications"
+        aria-expanded={isOpen}
+      >
+        <Bell className="w-5 h-5 text-muted-foreground" />
+        {unreadActivities.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+            {unreadActivities.length > 9 ? "9+" : unreadActivities.length}
+          </span>
+        )}
+      </button>
 
-      {/* Chart Container */}
-      <div className="h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={chartData} 
-            margin={{ top: 8, right: 8, left: 0, bottom: 16 }}
-            barSize={28}
-          >
-            <defs>
-              <linearGradient id="appointmentGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.1}/>
-              </linearGradient>
-            </defs>
-            
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              vertical={false}
-              stroke="hsl(var(--border))"
-              opacity={0.5}
-            />
-            
-            <XAxis 
-              dataKey="day" 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              padding={{ left: 8, right: 8 }}
-            />
-            
-            <YAxis 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              width={28}
-            />
-            
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload
-                  return (
-                    <div className="bg-background border border-border rounded-lg p-2 shadow-lg backdrop-blur-sm">
-                      <p className="text-xs font-semibold text-foreground mb-1">{data.date}</p>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-purple-700" />
-                        <p className="text-xs text-foreground">
-                          {data.appointments} appointment{data.appointments !== 1 ? 's' : ''}
-                        </p>
-                      </div>
+      {/* Notification Dropdown */}
+      {isOpen && (
+        <div className="fixed sm:absolute right-0 top-12 w-full sm:w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-lg z-50 animate-in fade-in-90 mx-4 sm:mx-0">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Notifications</h3>
+            <p className="text-xs text-muted-foreground">Recent system activities</p>
+          </div>
+          
+          <div className="max-h-64 sm:max-h-96 overflow-y-auto">
+            {unreadActivities.length > 0 ? (
+              unreadActivities.map((activity, index) => (
+                <div
+                  key={index}
+                  className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.color} flex-shrink-0`}>
+                      <activity.icon className="w-4 h-4 text-white" />
                     </div>
-                  )
-                }
-                return null
-              }}
-            />
-            
-            <Bar
-              dataKey="appointments"
-              fill="url(#appointmentGradient)"
-              radius={[4, 4, 0, 0]}
-              className="cursor-pointer transition-all hover:opacity-80"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Chart Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-purple-400" />
-          <span className="text-xs text-muted-foreground">Daily appointments</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatTimeDifference(activity.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center">
+                <Bell className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No notifications</p>
+              </div>
+            )}
+          </div>
+          
+          {unreadActivities.length > 0 && (
+            <div className="p-2 border-t border-border">
+              <button 
+                className="w-full text-xs text-primary hover:bg-muted p-2 rounded-lg transition-colors"
+                onClick={handleMarkAsRead}
+              >
+                Mark all as read
+              </button>
+            </div>
+          )}
         </div>
-        <div className="text-xs text-muted-foreground">
-          Updated {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      </div>
+      )}
     </div>
-  )
+  );
+};
+const AppointmentsCountChart = ({ appointments = [] }) => {
+  // ... (keep the existing AppointmentsCountChart code)
 }
-const EnhancedAdmin = () => {
+const EnhancedAdmin = ({ onLogout }) => {
   const [currentPage, setCurrentPage] = useState("dashboard")
-  const [notificationCount, setNotificationCount] = useState(3)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [companies, setCompanies] = useState([])
@@ -216,25 +155,38 @@ const EnhancedAdmin = () => {
   const [appointments, setAppointments] = useState([])
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
   const [recentActivities, setRecentActivities] = useState([])
+  const [unreadActivities, setUnreadActivities] = useState([])
   const [adminData, setAdminData] = useState(null)
   const [editingCompanyId, setEditingCompanyId] = useState(null)
+  const [lastCompanyCount, setLastCompanyCount] = useState(0)
+  const [lastAppointmentCount, setLastAppointmentCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true) // Add loading state
   const navigate = useNavigate()
 
   // Get admin data from storage on component mount
-useEffect(() => {
-  const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
-  if (storedAdmin) {
-    setAdminData(JSON.parse(storedAdmin))
-  } else {
-    navigate("/login")
-  }
-}, [navigate])
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
+      if (storedAdmin) {
+        setAdminData(JSON.parse(storedAdmin))
+        setIsLoading(false)
+      } else {
+        navigate("/login")
+      }
+    }
+    
+    checkAuth()
+  }, [navigate])
 
   const handleLogout = () => {
     localStorage.removeItem("admin")
     sessionStorage.removeItem("admin")
+    if (onLogout) {
+      onLogout() // Call the parent's logout handler
+    }
     navigate("/login")
   }
+
 
   const fetchCompanies = async () => {
     try {
@@ -248,10 +200,15 @@ useEffect(() => {
 
       const result = await response.json()
       if (result.success) {
-        setCompanies(result.data)
-        if (result.data.length > 0) {
-          updateRecentActivities("company", result.data[result.data.length - 1]?.name)
+        // Only create notification if new companies were added
+        if (result.data.length > lastCompanyCount && lastCompanyCount > 0) {
+          const newCompanies = result.data.slice(lastCompanyCount)
+          newCompanies.forEach(company => {
+            updateRecentActivities("company", company.name)
+          })
         }
+        setCompanies(result.data)
+        setLastCompanyCount(result.data.length)
       } else {
         throw new Error(result.message || "Failed to fetch companies")
       }
@@ -275,10 +232,15 @@ useEffect(() => {
 
       const result = await response.json()
       if (result.success) {
-        setAppointments(result.data)
-        if (result.data.length > 0) {
-          updateRecentActivities("appointment", result.data[result.data.length - 1])
+        // Only create notification if new appointments were added
+        if (result.data.length > lastAppointmentCount && lastAppointmentCount > 0) {
+          const newAppointments = result.data.slice(lastAppointmentCount)
+          newAppointments.forEach(appointment => {
+            updateRecentActivities("appointment", appointment)
+          })
         }
+        setAppointments(result.data)
+        setLastAppointmentCount(result.data.length)
       }
     } catch (error) {
       console.error("Error fetching appointments:", error)
@@ -375,15 +337,26 @@ useEffect(() => {
     }
   }
 
+  // Helper function to format time difference
+  const formatTimeDifference = (timestamp) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - timestamp) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
   const updateRecentActivities = (type, data) => {
-    const now = new Date()
-    let newActivity = {}
+    const now = new Date();
+    let newActivity = {};
 
     if (type === "company" && data) {
       newActivity = {
         title: "New company registered",
         description: `${data} joined the platform`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Building2,
         color: "bg-chart-1",
         timestamp: now,
@@ -392,7 +365,7 @@ useEffect(() => {
       newActivity = {
         title: "New appointment scheduled",
         description: `Appointment #${data.id} has been booked`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Calendar,
         color: "bg-chart-2",
         timestamp: now,
@@ -401,7 +374,7 @@ useEffect(() => {
       newActivity = {
         title: "Company deleted",
         description: `Company #${data.id} was removed`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Trash2,
         color: "bg-red-500",
         timestamp: now,
@@ -410,7 +383,7 @@ useEffect(() => {
       newActivity = {
         title: "Company updated",
         description: `${data} information was updated`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Edit,
         color: "bg-blue-500",
         timestamp: now,
@@ -418,24 +391,81 @@ useEffect(() => {
     }
 
     if (Object.keys(newActivity).length > 0) {
-      setRecentActivities((prev) => [newActivity, ...prev.slice(0, 3)])
+      setRecentActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 activities
+      setUnreadActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 unread activities
     }
   }
 
+  const handleMarkAsRead = () => {
+    setUnreadActivities([]);
+  }
+
   useEffect(() => {
-    fetchCompanies()
-    fetchAppointments()
-    setRecentActivities([
-      {
-        title: "System initialized",
-        description: "Admin dashboard loaded successfully",
-        time: "1 minute ago",
-        icon: CheckCircle,
-        color: "bg-chart-4",
-        timestamp: new Date(Date.now() - 60000),
-      },
-    ])
-  }, [])
+    // Initial data fetch
+    const initializeData = async () => {
+      try {
+        // Fetch companies
+        const companiesResponse = await fetch("http://localhost:5000/api/companies");
+        if (companiesResponse.ok) {
+          const companiesResult = await companiesResponse.json();
+          if (companiesResult.success) {
+            setCompanies(companiesResult.data);
+            setLastCompanyCount(companiesResult.data.length);
+          }
+        }
+        
+        // Fetch appointments
+        const appointmentsResponse = await fetch("http://localhost:5000/api/appointments");
+        if (appointmentsResponse.ok) {
+          const appointmentsResult = await appointmentsResponse.json();
+          if (appointmentsResult.success) {
+            setAppointments(appointmentsResult.data);
+            setLastAppointmentCount(appointmentsResult.data.length);
+          }
+        }
+        
+        // Set initial activity
+        const initialActivity = {
+          title: "System initialized",
+          description: "Admin dashboard loaded successfully",
+          time: formatTimeDifference(new Date(Date.now() - 60000)),
+          icon: CheckCircle,
+          color: "bg-chart-4",
+          timestamp: new Date(Date.now() - 60000),
+        };
+        setRecentActivities([initialActivity]);
+        setUnreadActivities([initialActivity]);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        
+        // Set initial activity even if there's an error
+        const initialActivity = {
+          title: "System initialized",
+          description: "Admin dashboard loaded successfully",
+          time: formatTimeDifference(new Date(Date.now() - 60000)),
+          icon: CheckCircle,
+          color: "bg-chart-4",
+          timestamp: new Date(Date.now() - 60000),
+        };
+        setRecentActivities([initialActivity]);
+        setUnreadActivities([initialActivity]);
+      } finally {
+        setIsLoadingCompanies(false);
+        setIsLoadingAppointments(false);
+      }
+    };
+    
+    initializeData();
+    
+    // Set up polling for new data
+    const companiesPollingInterval = setInterval(fetchCompanies, 30000); // Poll every 30 seconds
+    const appointmentsPollingInterval = setInterval(fetchAppointments, 30000); // Poll every 30 seconds
+    
+    return () => {
+      clearInterval(companiesPollingInterval);
+      clearInterval(appointmentsPollingInterval);
+    };
+  }, []);
 
   const getCompanyAppointmentCount = (companyId) => {
     return appointments.filter((apt) => apt.company_id === companyId).length
@@ -505,7 +535,7 @@ useEffect(() => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               <img
-                src="/public/Gravity Logo.png"
+                src="/Gravity Logo.png"
                 alt="Gravity Logo"
                 className="w-35 h-12 object-contain hover:scale-105 transition-transform ease-in-out ml-2 "
               />
@@ -587,14 +617,10 @@ useEffect(() => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                    {notificationCount}
-                  </span>
-                )}
-              </button>
+              <NotificationBell 
+                recentActivities={unreadActivities} 
+                onMarkAsRead={handleMarkAsRead}
+              />
 
               {adminData && (
                 <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
@@ -614,7 +640,6 @@ useEffect(() => {
     </div>
   )
 }
-
 const ModernDashboardView = ({
   companies = [],
   isLoading = false,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaPalette, FaImage, FaSave, FaBuilding, FaSpinner, FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import axios from 'axios';
-import { getCompanyApiUrl } from '../utils/apiHelpers';
+// import { getCompanyApiUrl } from '../utils/apiHelpers';
 
 const AdminCustomization = () => {
   const [companies, setCompanies] = useState([]);
