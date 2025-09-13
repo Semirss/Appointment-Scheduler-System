@@ -7,9 +7,6 @@ const AdminCustomization = () => {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
   const [apiUrl, setApiUrl] = useState('');
-  // const host = window.location.host;
-  // const apiUrl = getCompanyApiUrl(host);
-  // console.log(apiUrl)
   
   const [customization, setCustomization] = useState({
     theme_background: '#FFFFFF',
@@ -21,8 +18,10 @@ const AdminCustomization = () => {
     header_bg: '#FFFFFF',
     header_text: '#1F2937',
     logo_url: '',
-    banner_image: '',
-    // description: ''
+    description: '',
+    font_family: 'Inter',
+    font_size_base: '16px',
+    font_heading: 'Inter',
   });
 
   const fontOptions = [
@@ -44,7 +43,6 @@ const AdminCustomization = () => {
   ];
   
   const [previewLogo, setPreviewLogo] = useState('');
-  const [previewBanner, setPreviewBanner] = useState('');
   const [activeColorPicker, setActiveColorPicker] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -60,139 +58,6 @@ const AdminCustomization = () => {
     '#FFFFFF', '#000000', '#1F2937', '#F3F4F6', '#E5E7EB', '#9CA3AF',
     '#F8FAFC', '#F1F5F9', '#E2E8F0'
   ];
-
-  // Fetch companies from backend
-  // useEffect(() => {
-  //   const fetchCompanies = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const mockCompanies = [
-  //         { company_id: 1, name: 'Company One' },
-  //         { company_id: 2, name: 'Company Two' },
-  //         { company_id: 3, name: 'Company Three' }
-  //       ];
-        
-  //       try {
-  //         const response = await axios.get(`https://gravity.et/backend/api/companies`);
-  //         const companiesData = response.data.data
-  //         setCompanies(companiesData);
-
-  //         const foundCompany = companiesData.find(company => company.company_id === parseInt(selectedCompany));
-  //         console.log("foundCompany, ", foundCompany);
-
-  //         if (foundCompany) {
-  //           setDomain(foundCompany.domain);
-  //           console.log("Domain set to:", foundCompany.domain);
-  //         } else {
-  //           console.error("No company found for this selected ID.");
-  //           setDomain(null);
-  //         }
-          
-  //       } catch (error) {
-  //         console.error('API Error, using mock companies:', error);
-  //         setCompanies(mockCompanies);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching companies:', error);
-  //       setSaveError('Failed to load companies');
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchCompanies();
-  // }, [selectedCompany]);
-
-  // useEffect(() => {
-  //   const fetchCompanyIdByDomain = async () => {
-  //     if (!domain || !apiUrl) return;
-  //     console.log(domain)
-
-  //     try {
-  //       const response = await axios.get(`${apiUrl}/companies/domain/${domain}`);
-  //       console.log("ID", response.data.data.company_id);
-  //       if (response.data.success && response.data.data) {
-  //         setCompanyId(response.data.data.company_d);
-  //       } else {
-  //         console.error(`Company not found for domain: ${domain}`);
-  //         setCompanyId(null);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching company by domain:', error);
-  //       setCompanyId(null);
-  //     }
-  //   };
-
-  //   fetchCompanyIdByDomain();
-  // }, [domain, apiUrl]);
-
-  // useEffect(() => {
-  //   console.log("ID:  ", companyId);
-  //   const fetchCompanyCustomization = async () => {
-  //     if (!companyId) return;
-
-  //     try {
-  //       setLoading(true);
-        
-  //       try {
-  //         const response = await axios.get(`${apiUrl}/customizations/${companyId}`);
-
-  //         if (response.data.success && response.data.data) {
-  //           const dbData = response.data.data;
-            // setCustomization({
-            //   theme_background: dbData.bg_color || '#FFFFFF',
-            //   theme_text: dbData.text_color || '#1F2937',
-            //   theme_button: dbData.btn_color || '#3B82F6',
-            //   theme_card: dbData.card_color || '#F8FAFC',
-            //   sidebar_bg: dbData.sidebar_bg_color || '#FFFFFF',
-            //   sidebar_text: dbData.sidebar_text_color || '#1F2937',
-            //   header_bg: dbData.header_bg_color || '#FFFFFF',
-            //   header_text: dbData.header_text_color || '#1F2937',
-            //   logo_url: dbData.logo_url || '',
-            //   banner_image: dbData.banner_image || '',
-            //   font_family: dbData.font_family || 'Inter',
-            //   font_size_base: dbData.font_size_base || '16px',
-            //   font_heading: dbData.font_heading || dbData.font_family || 'Inter',
-            // });
-  //           setPreviewLogo(dbData.logo_url || '');
-  //           setPreviewBanner(dbData.banner_image || '');
-  //         } else {
-  //           resetToDefaults();
-  //         }
-  //       } catch (error) {
-  //         console.error('API Error, using default customization:', error);
-  //         resetToDefaults();
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching customization:', error);
-  //       resetToDefaults();
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-    // const resetToDefaults = () => {
-    //   setCustomization({
-    //     theme_background: '#FFFFFF',
-    //     theme_text: '#1F2937',
-    //     theme_button: '#3B82F6',
-    //     theme_card: '#F8FAFC',
-    //     sidebar_bg: '#FFFFFF',
-    //     sidebar_text: '#1F2937',
-    //     header_bg: '#FFFFFF',
-    //     header_text: '#1F2937',
-    //     logo_url: '',
-    //     banner_image: '',
-    //     font_family: 'Inter',
-    //     font_size_base: '16px',
-    //     font_heading: 'Inter',
-    //   });
-    //   setPreviewLogo('');
-    //   setPreviewBanner('');
-    // };
-
-  //   fetchCompanyCustomization();
-  // }, [companyId, apiUrl]);
 
   // A dedicated useEffect to fetch the list of all companies once on mount
   useEffect(() => {
@@ -253,13 +118,12 @@ const AdminCustomization = () => {
                           header_bg: dbData.header_bg_color || '#FFFFFF',
                           header_text: dbData.header_text_color || '#1F2937',
                           logo_url: dbData.logo_url || '',
-                          banner_image: dbData.banner_image || '',
+                          description: dbData.description || '',
                           font_family: dbData.font_family || 'Inter',
                           font_size_base: dbData.font_size_base || '16px',
                           font_heading: dbData.font_heading || dbData.font_family || 'Inter',
                       });
-                      setPreviewLogo(dbData.logo_url || '');
-                      setPreviewBanner(dbData.banner_image || '');
+                      // setPreviewLogo(dbData.logo_url || '');
                   } else {
                       resetToDefaults();
                   }
@@ -286,13 +150,12 @@ const AdminCustomization = () => {
               header_bg: '#FFFFFF',
               header_text: '#1F2937',
               logo_url: '',
-              banner_image: '',
+              description: '',
               font_family: 'Inter',
               font_size_base: '16px',
               font_heading: 'Inter',
           });
-          setPreviewLogo('');
-          setPreviewBanner('');
+          // setPreviewLogo('');
       };
 
       fetchCompanyCustomization();
@@ -314,34 +177,81 @@ const AdminCustomization = () => {
     setActiveColorPicker(null);
   };
 
-  const handleImageUpload = (e, type) => {
+  const uploadLogo = async (file) => {
+    // apiUrl comes from your component's state or props
+    if (!selectedCompany || !apiUrl) {
+        return { success: false, message: 'No company selected to upload logo.' };
+    }
+    // const companyId = selectedCompany.company_id;
+
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    // Upload to the primary API only
+    try {
+        const primaryResponse = await axios.post(
+            `${apiUrl}/customizations/upload-logo`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        
+        if (!primaryResponse.data.success) {
+            throw new Error(primaryResponse.data.message || 'Primary upload failed.');
+        }
+
+        const newLogoUrl = primaryResponse.data.url;
+        let message = 'Logo uploaded to primary database!';
+
+        return { success: true, url: newLogoUrl, message: message };
+    } catch (error) {
+        console.error('Error uploading logo:', error);
+        return { success: false, message: 'An error occurred during upload.' };
+    }
+  };
+
+  const handleImageUpload = async (e, type) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { 
+        setSaveError('Image size too large. Please use images under 2MB.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
         const imageUrl = e.target.result;
         if (type === 'logo') {
-          setPreviewLogo(imageUrl);
-          setCustomization(prev => ({
-            ...prev,
-            logo_url: imageUrl
-          }));
-        } else {
-          setPreviewBanner(imageUrl);
-          setCustomization(prev => ({
-            ...prev,
-            banner_image: imageUrl
-          }));
+            setPreviewLogo(imageUrl);
         }
-      };
-      reader.readAsDataURL(file);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+        const uploadResponse = await uploadLogo(file);
+        
+        if (uploadResponse.success) {
+            setCustomization(prev => ({
+                ...prev,
+                logo_url: uploadResponse.url
+            }));
+            setSaveSuccess(uploadResponse.message);
+            setSaveError('');
+        } else {
+            setSaveError(uploadResponse.message);
+            setPreviewLogo(customization.logo_url);
+        }
+    } catch (error) {
+        console.error('Error during logo upload:', error);
+        setSaveError('Failed to upload image. Please try again.');
+        setPreviewLogo(customization.logo_url);
     }
   };
 
   const handleSaveCustomization = async () => {
     if (!selectedCompany || !apiUrl) {
-      setSaveError('Please select a company first');
-      return;
+        setSaveError('Please select a company first');
+        return;
     }
 
     setSaveLoading(true);
@@ -349,45 +259,70 @@ const AdminCustomization = () => {
     setSaveSuccess('');
 
     try {
-      // Try to save to API, but don't fail completely if API is down
-      try {
-        await axios.put(`${apiUrl}/customizations/${companyId}`, {
-          bg_color: customization.theme_background,
-          text_color: customization.theme_text,
-          btn_color: customization.theme_button,
-          card_color: customization.theme_card,
-          sidebar_bg_color: customization.sidebar_bg,
-          sidebar_text_color: customization.sidebar_text,
-          header_bg_color: customization.header_bg,
-          header_text_color: customization.header_text,
-          logo_url: customization.logo_url,
-          banner_image: customization.banner_image,
-          font_family: customization.font_family,
-          font_size_base: customization.font_size_base,
-          font_heading: customization.font_heading,
-          // description: customization.description
-        });
+        const customizationData = {
+            bg_color: customization.theme_background,
+            text_color: customization.theme_text,
+            btn_color: customization.theme_button,
+            card_color: customization.theme_card,
+            sidebar_bg_color: customization.sidebar_bg,
+            sidebar_text_color: customization.sidebar_text,
+            header_bg_color: customization.header_bg,
+            header_text_color: customization.header_text,
+            logo_url: customization.logo_url,
+            description: customization.description,
+            font_family: customization.font_family,
+            font_size_base: customization.font_size_base,
+            font_heading: customization.font_heading,
+        };
 
-        setSaveSuccess('Customization saved successfully to database!');
-      } catch (error) {
-        console.error('API Error, but continuing:', error);
-        setSaveSuccess('Customization applied locally (database save failed)');
-      }
-      
-      setTimeout(() => setSaveSuccess(''), 3000);
+        // Existing customization save to the primary API
+        try {
+            await axios.put(`${apiUrl}/customizations/${companyId}`, customizationData);
+            setSaveSuccess('Customization saved successfully to database!');
+        } catch (error) {
+            console.error('Primary API Error, but continuing:', error);
+            setSaveSuccess('Customization applied locally (database save failed)');
+        }
+
+        // New customization save to gravity.et
+        try {
+            // 1. Get the domain from the companyId
+            const companyResponse = await axios.get(`${apiUrl}/company/${companyId}`);
+            // console.log(companyResponse.data.data.domain)
+            const domain = companyResponse.data.data.domain;
+            
+            if (domain) {
+                // 2. Get the new companyId using the domain from the gravity.et API
+                const domainResponse = await axios.get(`https://gravity.et/backend/api/companies/domain/${domain}`);
+                // console.log(domainResponse.data.data.company_id)
+                const newCompanyId = domainResponse.data.data.company_id;
+
+                if (newCompanyId) {
+                    // 3. Save the customization using the new ID to the gravity.et API
+                    await axios.put(`https://gravity.et/backend/api/customizations/${newCompanyId}`, customizationData);
+                    setSaveSuccess(prev => prev + ' and also saved to Gravity.et!');
+                } else {
+                    console.error('Gravity.et API Error: Could not get new company ID for domain:', domain);
+                    setSaveSuccess(prev => prev + ' (Gravity.et save failed: new ID not found)');
+                }
+            } else {
+                console.error('Primary API Error: Could not get domain for companyId:', companyId);
+                setSaveSuccess(prev => prev + ' (Gravity.et save failed: domain not found)');
+            }
+
+        } catch (error) {
+            console.error('Gravity.et API Error:', error);
+            setSaveSuccess(prev => prev + ' (Gravity.et save failed)');
+        }
+
+        setTimeout(() => setSaveSuccess(''), 5000);
     } catch (error) {
-      console.error('Error saving customization:', error);
-      setSaveError('Failed to save customization');
+        console.error('Error saving customization:', error);
+        setSaveError('Failed to save customization');
     } finally {
-      setSaveLoading(false);
+        setSaveLoading(false);
     }
   };
-
-  // const handleCompanyChange = (e) => {
-  //   setSelectedCompany(e.target.value);
-  //   setSaveError('');
-  //   setSaveSuccess('');
-  // };
 
   const handleCompanyChange = async (e) => {
     const companyId = e.target.value;
@@ -409,11 +344,8 @@ const AdminCustomization = () => {
         const companyData = companyResponse.data.data;
         
         const domain = companyData.domain;
-        // console.log(domain);
         
         if (domain) {
-          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
-          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
           const generatedApiUrl = getCompanyApiUrl(domain);
           setApiUrl(generatedApiUrl);
         } else {
@@ -616,33 +548,15 @@ const AdminCustomization = () => {
                   )}
                 </div>
 
-                {/* Banner Preview */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Banner Image
-                  </label>
-                  {previewBanner ? (
-                    <img 
-                      src={previewBanner} 
-                      alt="Banner" 
-                      className="w-full h-32 object-cover border border-gray-200 rounded"
-                    />
-                  ) : (
-                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400">
-                      No Banner
-                    </div>
-                  )}
-                </div>
-
                 {/* Description */}
-                {/* <div className="md:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
                   </label>
                   <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded border border-gray-200">
                     {customization.description || 'No description set'}
                   </p>
-                </div> */}
+                </div>
               </div>
 
               <div className="md:col-span-2">
@@ -920,113 +834,99 @@ const AdminCustomization = () => {
                   </div>
                 </div>
 
-                {/* Banner Upload */}
+                {/* Description Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload Banner
+                    Description
                   </label>
-                  <div className="flex items-center gap-4">
-                    {previewBanner && (
-                      <img 
-                        src={previewBanner} 
-                        alt="Banner preview" 
-                        className="w-32 h-16 object-cover border border-gray-200 rounded"
-                      />
-                    )}
-                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                      <FaImage />
-                      Choose File
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'banner')}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+                  <textarea
+                    name="description"
+                    value={customization.description}
+                    onChange={handleInputChange}
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter company description"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-3">
-                      Font Settings
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Body Font Selector */}
-                      <div>
-                        <label className="block text-xs opacity-70 mb-2">Body Font</label>
-                        <select
-                          value={customization.font_family}
-                          onChange={(e) => handleInputChange({
-                            target: {
-                              name: 'font_family',
-                              value: e.target.value
-                            }
-                          })}
-                          className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
-                          style={{ 
-                            borderColor: `${customization.theme_button}20`,
-                            fontFamily: customization.font_family
-                          }}
-                          // disabled={isLocked}
-                        >
-                          {fontOptions.map(font => (
-                            <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
-                              {font.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Heading Font Selector */}
-                      <div>
-                        <label className="block text-xs opacity-70 mb-2">Heading Font</label>
-                        <select
-                          value={customization.font_heading}
-                          onChange={(e) => handleInputChange({
-                            target: {
-                              name: 'font_heading',
-                              value: e.target.value
-                            }
-                          })}
-                          className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
-                          style={{ 
-                            borderColor: `${customization.theme_button}20`,
-                            fontFamily: customization.font_heading
-                          }}
-                          // disabled={isLocked}
-                        >
-                          {fontOptions.map(font => (
-                            <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
-                              {font.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Font Size Selector */}
-                      <div>
-                        <label className="block text-xs opacity-70 mb-2">Base Font Size</label>
-                        <select
-                          value={customization.font_size_base}
-                          onChange={(e) => handleInputChange({
-                            target: {
-                              name: 'font_size_base',
-                              value: e.target.value
-                            }
-                          })}
-                          className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
-                          style={{ 
-                            borderColor: `${customization.theme_button}20`,
-                            fontSize: customization.font_size_base
-                          }}
-                          // disabled={isLocked}
-                        >
-                          {fontSizeOptions.map(size => (
-                            <option key={size.value} value={size.value}>
-                              {size.name} ({size.value})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    Font Settings
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Body Font Selector */}
+                    <div>
+                      <label className="block text-xs opacity-70 mb-2">Body Font</label>
+                      <select
+                        value={customization.font_family}
+                        onChange={(e) => handleInputChange({
+                          target: {
+                            name: 'font_family',
+                            value: e.target.value
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                          borderColor: `${customization.theme_button}20`,
+                          fontFamily: customization.font_family
+                        }}
+                      >
+                        {fontOptions.map(font => (
+                          <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                            {font.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Heading Font Selector */}
+                    <div>
+                      <label className="block text-xs opacity-70 mb-2">Heading Font</label>
+                      <select
+                        value={customization.font_heading}
+                        onChange={(e) => handleInputChange({
+                          target: {
+                            name: 'font_heading',
+                            value: e.target.value
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                          borderColor: `${customization.theme_button}20`,
+                          fontFamily: customization.font_heading
+                        }}
+                      >
+                        {fontOptions.map(font => (
+                          <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                            {font.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Font Size Selector */}
+                    <div>
+                      <label className="block text-xs opacity-70 mb-2">Base Font Size</label>
+                      <select
+                        value={customization.font_size_base}
+                        onChange={(e) => handleInputChange({
+                          target: {
+                            name: 'font_size_base',
+                            value: e.target.value
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:border-transparent"
+                        style={{ 
+                          borderColor: `${customization.theme_button}20`,
+                          fontSize: customization.font_size_base
+                        }}
+                      >
+                        {fontSizeOptions.map(size => (
+                          <option key={size.value} value={size.value}>
+                            {size.name} ({size.value})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>

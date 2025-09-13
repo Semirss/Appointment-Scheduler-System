@@ -184,24 +184,24 @@ export default function AppointmentBooking() {
   // Update the handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
-    if (!formData.name || !formData.email || !formData.date || !formData.time || 
-        !formData.company_id || !formData.service_id) {
+    if (!formData.name || !formData.email || !formData.date || !formData.time ||
+      !formData.company_id || !formData.service_id) {
       setError("Please fill in all required fields.");
       return;
     }
-    
+
     setError("");
     setLoading(true);
-    
+
     try {
       let clientId;
       let addressId = null;
-      
+
       // Get company addresses first
       const addressesResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${formData.company_id}`);
-      
+
       if (addressesResponse.ok) {
         const addressesData = await addressesResponse.json();
         // Use the first address if available
@@ -209,7 +209,7 @@ export default function AppointmentBooking() {
           addressId = addressesData.data[0].address_id;
         }
       }
-      
+
       // Create or get user
       const userResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/users`, {
         method: "POST",
@@ -221,28 +221,28 @@ export default function AppointmentBooking() {
           email: formData.email,
           phone: formData.phone || null,
           telegram_id: null,
-          address: formData.address || null // Add address field if needed
+          address: formData.address || null
         }),
       });
-      
+
       if (!userResponse.ok) {
         const errorData = await userResponse.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create/get user");
       }
-      
+
       const userData = await userResponse.json();
       clientId = userData.data.user_id;
-      
+
       // Format date and time for backend
       const startTime = new Date(`${formData.date}T${formData.time}`);
       const serviceDuration = selectedService ? parseInt(selectedService.duration_time) || 30 : 30;
       const endTime = new Date(startTime.getTime() + serviceDuration * 60000);
-      
+
       // Format dates for MySQL (YYYY-MM-DD HH:MM:SS)
       const formatDateTimeForMySQL = (date) => {
         return date.toISOString().slice(0, 19).replace('T', ' ');
       };
-      
+
       const appointmentData = {
         company_id: formData.company_id,
         client_id: clientId,
@@ -250,11 +250,11 @@ export default function AppointmentBooking() {
         start_time: formatDateTimeForMySQL(startTime),
         end_time: formatDateTimeForMySQL(endTime),
         status: "scheduled",
-        address_id: addressId // Add address_id to appointment
+        address_id: addressId
       };
-      
+
       console.log("Sending appointment data:", appointmentData);
-      
+
       const appointmentResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments`, {
         method: "POST",
         headers: {
@@ -262,15 +262,71 @@ export default function AppointmentBooking() {
         },
         body: JSON.stringify(appointmentData),
       });
-      
+
       if (!appointmentResponse.ok) {
         const errorData = await appointmentResponse.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create appointment");
       }
-      
+
       const appointmentResult = await appointmentResponse.json();
       console.log("Appointment created:", appointmentResult);
-      
+
+      // --- Start of new logic from handleNewAppointmentFormSubmit ---
+
+      // Increment appointment count for the company on the primary domain
+      try {
+        await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/companies/incrementAppointmentCount/${formData.company_id}`, {
+          method: "PUT",
+        });
+        console.log("Appointment count incremented on primary domain.");
+      } catch (error) {
+        console.error('Failed to increment appointment count on primary domain:', error);
+      }
+
+      // Fetch company domain to update the count on the other domain
+      let companyDomain = '';
+      try {
+        const companyResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/company/${formData.company_id}`);
+        const companyData = await companyResponse.json();
+        if (companyResponse.ok && companyData.success && companyData.data) {
+          companyDomain = companyData.data.domain;
+        } else {
+          console.error('Company not found or failed to retrieve company data.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch company details:', error);
+      }
+
+      if (companyDomain) {
+        try {
+          const domainResponse = await fetch(`https://gravity.et/backend/api/companies/domain/${companyDomain}`);
+          const domainData = await domainResponse.json();
+
+          if (domainResponse.ok && domainData.success && domainData.data) {
+            const newCompanyId = domainData.data.company_id;
+            console.log("Company ID from gravity.et:", newCompanyId);
+
+            const countResponse = await fetch(`https://gravity.et/backend/api/companies/incrementAppointmentCount/${newCompanyId}`, {
+              method: "PUT",
+            });
+
+            if (countResponse.ok) {
+              console.log("Appointment count updated on gravity.et:", await countResponse.json());
+            } else {
+              console.error('Failed to update appointment count on gravity.et.');
+            }
+          } else {
+            console.error('Failed to get company ID from domain.');
+          }
+        } catch (error) {
+          console.error('Failed to perform count update on gravity.et:', error);
+        }
+      } else {
+        console.warn('No company domain found in the appointment creation response.');
+      }
+
+      // --- End of new logic ---
+
       setIsSubmitted(true);
     } catch (error) {
       console.error("Submission error:", error);
@@ -279,6 +335,7 @@ export default function AppointmentBooking() {
       setLoading(false);
     }
   };
+
 
   const bookAnother = () => {
     setIsSubmitted(false)
@@ -386,7 +443,7 @@ export default function AppointmentBooking() {
           <div className="text-center">
             <h1 className="text-3xl font-bold text-balance" style={styles.heading}>Book Your Appointment</h1>
             <p className="mt-2 text-pretty" style={styles.text}>
-              Schedule your visit with our healthcare professionals
+              {customization.description}
             </p>
           </div>
 

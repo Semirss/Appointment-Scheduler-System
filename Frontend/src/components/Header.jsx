@@ -134,7 +134,7 @@ const Header = ({ isCollapsed }) => {
             <header
                 style={headerStyle}
                 className={`fixed top-0 right-0 flex items-center p-2 sm:p-[0.66rem] bg-white border-b border-gray-200 shadow-sm z-40 transition-all duration-300
-                left-0 md:${isCollapsed ? 'left-20' : 'left-64'}`}
+                left-0 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}
             >
                 <div className="flex relative flex-1 ml-0 md:ml-4 mr-2">
                     <div className="relative w-full">
@@ -151,7 +151,7 @@ const Header = ({ isCollapsed }) => {
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="relative p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors duration-200"
                     >
-                        <FaBell style={buttonStyle} className="h-5 w-5 md:h-6 md:w-6 text-gray-600" />
+                        <FaBell className="h-5 w-5 md:h-6 md:w-6 text-gray-600" />
                         {newAppointmentsCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 md:h-5 md:w-5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>

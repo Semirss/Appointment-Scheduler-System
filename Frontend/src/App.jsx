@@ -10,7 +10,7 @@ import AdminCustomization from '../../appointment-scheduler-system/AdminPages/Ad
 // import Login from './pages/admin/AdminLogin';
 import { CompanyProvider } from './context/CompanyContext';
 import GlobalStyles from './components/GlobalStyles';
-import FontLoader from './components/FontLoader';
+// import FontLoader from './components/FontLoader';
 import AppointmentBooking from './pages/user/User';
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -20,7 +20,7 @@ function App() {
       <CompanyProvider>
         <CustomizationProvider>
           <GlobalStyles />
-          <FontLoader />
+          {/* <FontLoader /> */}
           <Router>
             <Routes>
               <Route path='/login' element={<CompanyLogin />}></Route>

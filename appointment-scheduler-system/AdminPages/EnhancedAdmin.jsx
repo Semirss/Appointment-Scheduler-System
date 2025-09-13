@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   BarChart3,
   Building2,
@@ -29,6 +29,219 @@ import { useNavigate } from "react-router-dom"
 import AdminCustomization from "./AdminCustomization"
 import axios from 'axios';
 import { getCompanyApiUrl } from "../utils/apiHelpers"
+
+const useClickOutside = (ref, callback) => {
+  useEffect(() => {
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        callback();
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [ref, callback]);
+};
+
+const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockRequest }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [unreadActivities, setUnreadActivities] = useState(recentActivities);
+  const dropdownRef = useRef(null);
+
+  useClickOutside(dropdownRef, () => setIsOpen(false));
+
+  useEffect(() => {
+    setUnreadActivities(recentActivities);
+  }, [recentActivities]);
+
+  const formatTimeDifference = (timestamp) => {
+    if (!timestamp) return "Just now";
+    
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(timestamp)) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
+  const handleMarkAsRead = () => {
+    setUnreadActivities([]);
+    onMarkAsRead();
+  };
+
+  const handleAcceptClick = (companyId) => {
+    onAcceptUnlockRequest(companyId);
+    // Optionally, you can also close the dropdown after an action
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        className="relative p-2 hover:bg-muted rounded-lg transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Notifications"
+        aria-expanded={isOpen}
+      >
+        <Bell className="w-5 h-5 text-muted-foreground" />
+        {unreadActivities.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+            {unreadActivities.length > 9 ? "9+" : unreadActivities.length}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="fixed sm:absolute right-0 top-12 w-full sm:w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-lg z-50 animate-in fade-in-90 mx-4 sm:mx-0">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Notifications</h3>
+            <p className="text-xs text-muted-foreground">Recent system activities</p>
+          </div>
+          
+          <div className="max-h-64 sm:max-h-96 overflow-y-auto">
+            {unreadActivities.length > 0 ? (
+              unreadActivities.map((activity, index) => (
+                <div
+                  key={index}
+                  className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.color} flex-shrink-0`}>
+                      <activity.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatTimeDifference(activity.timestamp)}
+                      </p>
+
+                      {/* Conditionally render the button based on the notification title */}
+                      {activity.title === "New unlock request" && (
+                        <button
+                          className="mt-2 text-xs text-white bg-green-500 hover:bg-green-600 py-1 px-3 rounded-md transition-colors"
+                          onClick={() => handleAcceptUnlockRequest(activity.company_id)}
+                        >
+                          Accept Request
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center">
+                <Bell className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No notifications</p>
+              </div>
+            )}
+          </div>
+          
+          {unreadActivities.length > 0 && (
+            <div className="p-2 border-t border-border">
+              <button 
+                className="w-full text-xs text-primary hover:bg-muted p-2 rounded-lg transition-colors"
+                onClick={handleMarkAsRead}
+              >
+                Mark all as read
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const handleAcceptUnlockRequest = async (companyId) => {
+  try {
+    // 1. Unlock customization in the Gravity.et system
+    const gravityApiUrl = `https://gravity.et/backend/api/customizations/unlock`;
+    const gravityResponse = await fetch(gravityApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ company_id: companyId }),
+    });
+
+    if (!gravityResponse.ok) {
+      throw new Error(`Gravity.et API error! status: ${gravityResponse.status}`);
+    }
+
+    const gravityResult = await gravityResponse.json();
+
+    if (!gravityResult.success) {
+      throw new Error(gravityResult.message || "Failed to accept unlock request on Gravity.et");
+    }
+
+    console.log("Unlock request accepted on Gravity.et.");
+    
+    // 2. Unlock customization in the other system
+    try {
+      // Get the domain from Gravity.et's company endpoint
+      const companyResponse = await fetch(`https://gravity.et/backend/api/company/${companyId}`);
+      if (!companyResponse.ok) {
+        throw new Error(`Failed to get domain from Gravity.et: HTTP status ${companyResponse.status}`);
+      }
+      const companyResult = await companyResponse.json();
+      const domain = companyResult.data.domain;
+
+      if (domain) {
+        // Generate the base API URL using the domain
+        const generatedApiUrl = getCompanyApiUrl(domain);
+        console.log(generatedApiUrl)
+
+        // Get the company_id from the other system using the domain
+        const otherCompanyResponse = await fetch(`${generatedApiUrl}/companies/domain/${domain}`);
+        if (!otherCompanyResponse.ok) {
+          throw new Error(`Failed to get company ID from other system: HTTP status ${otherCompanyResponse.status}`);
+        }
+        const otherCompanyResult = await otherCompanyResponse.json();
+        const otherCompanyId = otherCompanyResult.data.company_id;
+
+        if (otherCompanyId) {
+          // Send the unlock request to the other system
+          const otherApiResponse = await fetch(`${generatedApiUrl}/customizations/unlock`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ company_id: otherCompanyId }),
+          });
+
+          if (!otherApiResponse.ok) {
+            throw new Error(`Other system API error! status: ${otherApiResponse.status}`);
+          }
+          const otherApiResult = await otherApiResponse.json();
+          if (otherApiResult.success) {
+            alert("Unlock request accepted successfully on both systems.");
+            // setUnreadActivities([]);
+          } else {
+            console.error(otherApiResult.message || "Failed to accept unlock request on the other system.");
+            alert("Unlock request accepted on Gravity.et, but failed on the other system.");
+          }
+        } else {
+          console.error("Could not find company ID in the other system.");
+          alert("Unlock request accepted on Gravity.et, but failed on the other system (ID not found).");
+        }
+      } else {
+        console.error("Domain not found for the given company ID.");
+        alert("Unlock request accepted on Gravity.et, but failed on the other system (domain not found).");
+      }
+    } catch (otherApiError) {
+      console.error("Error with the other system's API:", otherApiError);
+      alert("Unlock request accepted on Gravity.et, but an error occurred with the other system.");
+    }
+  } catch (error) {
+    console.error("Error accepting unlock request:", error);
+    alert(`Error: ${error.message}`);
+  }
+};
 
 const AppointmentsCountChart = ({ appointments = [] }) => {
   const [chartData, setChartData] = useState([])
@@ -222,6 +435,7 @@ const EnhancedAdmin = () => {
   const [editingCompanyId, setEditingCompanyId] = useState(null)
   const [apiUrl, setApiUrl] = useState('');
   const [companyID, setCompanyID] = useState(null);
+  const [unreadActivities, setUnreadActivities] = useState([])
   const navigate = useNavigate()
 
   // Get admin data from storage on component mount
@@ -271,7 +485,7 @@ useEffect(() => {
   const fetchAppointments = async () => {
     try {
       setIsLoadingAppointments(true)
-      const response = await fetch(`https://gravity.et/backend/api/appointments`)
+      const response = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/14`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -291,6 +505,39 @@ useEffect(() => {
       setIsLoadingAppointments(false)
     }
   }
+
+  const fetchCustomizationRequests = async () => {
+    try {
+        const response = await fetch(`https://gravity.et/backend/api/customizations`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log(result.data)
+        
+        // Ensure result.data is an array and not empty
+        if (Array.isArray(result.data) && result.data.length > 0) {
+            // Filter the array to get only the items with status 'unlock_requested'
+            const unlockRequests = result.data.filter(item => item.status === 'unlock_requested');
+
+            // Iterate over the filtered array and call updateRecentActivities for each item
+            unlockRequests.forEach(request => {
+                console.log(`Processing request for company: ${request.company_name} with status: ${request.status}`);
+                updateRecentActivities("unlock_requested", request.company_name, request.company_id);
+            });
+            
+            if (unlockRequests.length === 0) {
+                console.log("No unlock requests found.");
+            }
+        } else {
+            console.log("No data found in the response.");
+        }
+    } catch (error) {
+        console.error(`Error fetching customization requests:`, error);
+    }
+  };
 
   const handleEditCompany = async (companyId) => {
     setEditingCompanyId(companyId);
@@ -451,7 +698,7 @@ useEffect(() => {
 
   const handleViewCompany = async (companyId) => {
     try {
-      const response = await fetch(`https://gravity.et/backend/api/appointments/countByCompany/${companyId}`)
+      const response = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/countByCompany/14`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -467,9 +714,11 @@ useEffect(() => {
     }
   }
 
-  const updateRecentActivities = (type, data) => {
+  const updateRecentActivities = (type, data, id) => {
     const now = new Date()
     let newActivity = {}
+
+    console.log(data)
 
     if (type === "company" && data) {
       newActivity = {
@@ -480,15 +729,15 @@ useEffect(() => {
         color: "bg-chart-1",
         timestamp: now,
       }
-    } else if (type === "appointment" && data) {
-      newActivity = {
-        title: "New appointment scheduled",
-        description: `Appointment #${data.id} has been booked`,
-        time: "Just now",
-        icon: Calendar,
-        color: "bg-chart-2",
-        timestamp: now,
-      }
+    // } else if (type === "appointment" && data) {
+    //   newActivity = {
+    //     title: "New appointment scheduled",
+    //     description: `Appointment #${data.id} has been booked`,
+    //     time: "Just now",
+    //     icon: Calendar,
+    //     color: "bg-chart-2",
+    //     timestamp: now,
+    //   }
     } else if (type === "company_deleted") {
       newActivity = {
         title: "Company deleted",
@@ -509,14 +758,44 @@ useEffect(() => {
       }
     }
 
+    else if (type === "unlock_requested" && data) {
+      newActivity = {
+        company_id: id,
+        title: "New unlock request",
+        description: `${data} requested unlock status`,
+        time: "Just now",
+        icon: Building2,
+        color: "bg-orange-500",
+        timestamp: now,
+      };
+    }
+
+    else if (type === "unlock_requested" && data) {
+      newActivity = {
+        title: "New unlock request",
+        description: `${data.company_name} requested unlock status`,
+        time: "Just now",
+        icon: Building2, // or another relevant icon
+        color: "bg-orange-500",
+        timestamp: now,
+        company_id: data.company_id // <-- Add the company ID here
+      };
+    }
+
     if (Object.keys(newActivity).length > 0) {
       setRecentActivities((prev) => [newActivity, ...prev.slice(0, 3)])
+      setUnreadActivities((prev) => [newActivity, ...prev.slice(0, 9)])
     }
+  }
+
+  const handleMarkAsRead = () => {
+    setUnreadActivities([]);
   }
 
   useEffect(() => {
     fetchCompanies()
     fetchAppointments()
+    fetchCustomizationRequests();
     setRecentActivities([
       {
         title: "System initialized",
@@ -529,9 +808,9 @@ useEffect(() => {
     ])
   }, [])
 
-  const getCompanyAppointmentCount = (companyId) => {
-    return appointments.filter((apt) => apt.company_id === companyId).length
-  }
+  // const getCompanyAppointmentCount = (companyId) => {
+  //   return appointments.filter((apt) => apt.company_id === companyId).length
+  // }
 
   const handleNavigation = (page) => {
     setCurrentPage(page)
@@ -548,7 +827,7 @@ useEffect(() => {
             appointments={appointments}
             isLoadingAppointments={isLoadingAppointments}
             recentActivities={recentActivities}
-            getCompanyAppointmentCount={getCompanyAppointmentCount}
+            // getCompanyAppointmentCount={getCompanyAppointmentCount}
           />
         )
       case "addCompany":
@@ -559,7 +838,7 @@ useEffect(() => {
             companies={companies}
             isLoading={isLoadingCompanies}
             error={companiesError}
-            getCompanyAppointmentCount={getCompanyAppointmentCount}
+            // getCompanyAppointmentCount={getCompanyAppointmentCount}
             onEdit={handleEditCompany}
             onDelete={handleDeleteCompany}
             onView={handleViewCompany}
@@ -597,7 +876,7 @@ useEffect(() => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               <img
-                src="/public/Gravity Logo.png"
+                src="/Gravity-Logo.png"
                 alt="Gravity Logo"
                 className="w-35 h-12 object-contain hover:scale-105 transition-transform ease-in-out ml-2 "
               />
@@ -679,15 +958,10 @@ useEffect(() => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                    {notificationCount}
-                  </span>
-                )}
-              </button>
-             
+              <NotificationBell 
+                recentActivities={unreadActivities} 
+                onMarkAsRead={handleMarkAsRead}
+              />
 
               {adminData && (
                 <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
@@ -714,7 +988,7 @@ const ModernDashboardView = ({
   appointments = [],
   isLoadingAppointments = false,
   recentActivities = [],
-  getCompanyAppointmentCount = () => 0,
+  // Remove getCompanyAppointmentCount since we don't need it anymore
 }) => {
   const [selectedTimeRange, setSelectedTimeRange] = useState("7d")
 
@@ -729,7 +1003,7 @@ const ModernDashboardView = ({
     },
     {
       title: "Total Appointments",
-      value: isLoadingAppointments ? "..." : appointments.length.toString(),
+      value: isLoading ? "..." : companies.reduce((total, company) => total + (company.appointmentCount || 0), 0).toString(),
       change: "+8%",
       trend: "up",
       icon: Calendar,
@@ -748,7 +1022,7 @@ const ModernDashboardView = ({
   const topCompaniesData = companies
     .map((company) => ({
       company: company.name,
-      count: getCompanyAppointmentCount(company.company_id),
+      count: company.appointmentCount || 0, // Use the appointmentCount field directly
       status: company.status === "Active" ? "High" : "Medium",
       growth: `+${Math.floor(Math.random() * 25) + 5}%`,
       avatar: company.name
@@ -757,9 +1031,9 @@ const ModernDashboardView = ({
         .join("")
         .slice(0, 2),
     }))
-    .filter((item) => item.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+    .filter((item) => item.count > 0) // Only show companies with appointments
+    .sort((a, b) => b.count - a.count) // Sort by appointment count descending
+    .slice(0, 5) // Top 5 companies
 
   return (
     <div className="space-y-4">
@@ -1611,7 +1885,7 @@ const ModernViewCompaniesList = ({
   companies = [],
   isLoading = false,
   error = null,
-  getCompanyAppointmentCount = () => 0,
+  // getCompanyAppointmentCount = () => 0,
   onEdit = () => {},
   onDelete = () => {},
   onView = () => {},

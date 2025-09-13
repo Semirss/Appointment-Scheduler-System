@@ -19,30 +19,35 @@ const CompanyLogin = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
 
-    try {
-      // Step 1: Attempt to log in the company
-      const loginResponse = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/companyLogin', formData);
+    // Trim whitespace from email and password
+    const trimmedEmail = formData.email.trim();
+    const trimmedPassword = formData.password.trim();
 
-      // Step 2: Extract the company data directly from the login response
-      const companyData = loginResponse.data.data;
-      setCompany(companyData); // Store the entire company object in context
+    try {
+      const loginResponse = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/companyLogin', {
+        email: trimmedEmail,
+        password: trimmedPassword
+      });
 
-      console.log('Login successful! Company data:', companyData);
-      setSuccess('Login successful! Welcome back.');
-      navigate('/');
+      const companyData = loginResponse.data.data;
+      setCompany(companyData);
 
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
-      console.error('Login failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      console.log('Login successful! Company data:', companyData);
+      setSuccess('Login successful! Welcome back.');
+      navigate('/');
+
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-4">
