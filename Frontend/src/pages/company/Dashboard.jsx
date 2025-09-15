@@ -16,6 +16,7 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { useCustomization } from '../../context/CustomizationContext';
 import { CheckCircle, AlertCircle, Users, Calendar, Star, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCompany } from '../../context/CompanyContext';
 
 // Register ChartJS components
 ChartJS.register(
@@ -119,7 +120,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   // Appointee ID can be a prop, a context variable, or a constant
-  const companyId = 6;
+  const { company } = useCompany();
+  const companyId = company?.company_id;
 
   useEffect(() => {
     fetchDashboardData();
@@ -400,7 +402,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6" >
       {error && (
         <div className="bg-destructive/10 border-l-4 border-destructive p-4 rounded-lg animate-slide-in-up">
           <div className="flex items-center">

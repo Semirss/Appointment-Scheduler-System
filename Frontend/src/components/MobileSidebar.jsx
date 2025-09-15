@@ -25,20 +25,20 @@ const MobileSidebar = ({ setActiveTab, activeTab }) => {
 
   return (
     <div 
-      className="md:hidden fixed bottom-0 left-0 right-0 shadow-lg p-2 flex justify-around"
+      className="md:hidden fixed bottom-0 left-0 right-0 shadow-lg p-1 flex justify-between z-50"
       style={mobileSidebarStyle}
     >
       {navItems.map(item => (
         <div
           key={item.name}
-          className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer transition-colors duration-200 ${
+          className={`flex flex-col items-center flex-1 p-2 rounded-lg cursor-pointer transition-colors duration-200 text-center ${
             activeTab === item.name ? 'font-semibold' : ''
           }`}
           style={activeTab === item.name ? activeItemStyle : { color: customization.sidebar_text }}
           onClick={() => setActiveTab(item.name)}
         >
-          <div className="text-xl">{item.icon}</div>
-          <span className="text-xs mt-1">{item.name}</span>
+          <div className="text-lg md:text-xl">{item.icon}</div>
+          <span className="text-[0.6rem] sm:text-xs mt-1 leading-none">{item.name}</span>
         </div>
       ))}
     </div>

@@ -10,12 +10,9 @@ const AddService = () => {
   const [serviceError, setServiceError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Set a constant company ID
-  // const companyId = 2;
   const { company } = useCompany();
   const companyId = company?.company_id;
 
-  // State for the service form data
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,7 +22,6 @@ const AddService = () => {
     is_active: true
   });
 
-  // Apply the customized colors
   const containerStyle = {
     backgroundColor: customization.theme_background,
     color: customization.theme_text,
@@ -36,19 +32,15 @@ const AddService = () => {
     color: getContrastColor(customization.theme_button),
   };
 
-  // Helper function to determine text color based on background
   function getContrastColor(hexColor) {
     if (!hexColor) return '#000000';
     
-    // Convert hex to RGB
     const r = parseInt(hexColor.substr(1, 2), 16);
     const g = parseInt(hexColor.substr(3, 2), 16);
     const b = parseInt(hexColor.substr(5, 2), 16);
     
-    // Calculate luminance
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     
-    // Return black or white depending on luminance
     return luminance > 0.5 ? '#000000' : '#FFFFFF';
   }
 
@@ -66,7 +58,6 @@ const AddService = () => {
     setServiceError('');
     setSuccessMessage('');
 
-    // Prepare payload
     const payload = {
       company_id: companyId,
       name: formData.name,
@@ -83,7 +74,6 @@ const AddService = () => {
       if (response.data.success) {
         setSuccessMessage('Service created successfully!');
         
-        // Reset form
         setFormData({
           name: '',
           description: '',
@@ -110,7 +100,7 @@ const AddService = () => {
   const isFormValid = formData.name && formData.price && formData.duration_time;
 
   return (
-    <div className="p-6 min-h-screen" style={containerStyle}>
+    <div className="p-4 sm:p-6 min-h-screen" style={containerStyle}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -119,7 +109,7 @@ const AddService = () => {
         </div>
 
         {/* Form */}
-        <div className="rounded-lg shadow-sm p-6" style={{ backgroundColor: customization.theme_background }}>
+        <div className="rounded-lg shadow-sm p-4 sm:p-6" style={{ backgroundColor: customization.theme_background }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Service Information */}
             <div>
@@ -244,7 +234,7 @@ const AddService = () => {
             )}
 
             {/* Form Actions */}
-            <div className="flex gap-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => {
@@ -257,7 +247,7 @@ const AddService = () => {
                     is_active: true
                   });
                 }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
               >
                 <FaTimes />
                 Clear
@@ -266,7 +256,7 @@ const AddService = () => {
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
                 style={buttonStyle}
-                className="px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ml-auto"
+                className="w-full sm:w-auto px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 sm:ml-auto"
               >
                 <FaPlus />
                 {isSubmitting ? 'Creating...' : 'Create Service'}
@@ -277,7 +267,7 @@ const AddService = () => {
 
         {/* Quick Tips */}
         <div className="mt-6 rounded-lg p-4" style={{ 
-          backgroundColor: `${customization.theme_button}20`, // 20% opacity
+          backgroundColor: `${customization.theme_button}20`,
           color: customization.theme_text 
         }}>
           <h4 className="font-semibold mb-2">Quick Tips</h4>

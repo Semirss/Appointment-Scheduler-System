@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useCompany } from '../../context/CompanyContext';
 
 const UpdateInformation = () => {
-  const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading } = useCustomization();
+  const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading, handleLogoUpload } = useCustomization();
   const { company } = useCompany();
   
   // Derive states directly from customization.status
@@ -14,7 +14,6 @@ const UpdateInformation = () => {
   const isUnlocked = customization.status === 'unlocked';
   
   const [previewLogo, setPreviewLogo] = useState('');
-  const [previewBanner, setPreviewBanner] = useState('');
   const [activeColorPicker, setActiveColorPicker] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -24,8 +23,7 @@ const UpdateInformation = () => {
   // Load initial data
   useEffect(() => {
     setPreviewLogo(customization.logo_url);
-    setPreviewBanner(customization.banner_image);
-  }, [customization.logo_url, customization.banner_image]);
+  }, [customization.logo_url]);
 
     // Polling effect to check for status changes
   useEffect(() => {
@@ -92,14 +90,6 @@ const UpdateInformation = () => {
     { name: 'X-Large', value: '20px' },
   ];
 
-  // Load initial data
-  // useEffect(() => {
-  //   setPreviewLogo(customization.logo_url);
-  //   setPreviewBanner(customization.banner_image);
-  //   setIsLocked(customization.status === 'locked');
-  //   setRequestSent(customization.status === 'unlock_requested');
-  // }, [customization]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     updateCustomization({
@@ -124,50 +114,108 @@ const UpdateInformation = () => {
 
   const handleImageUpload = async (e, type) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageUrl = e.target.result;
-        const newCustomization = { ...customization };
-        
-        if (type === 'logo') {
-          setPreviewLogo(imageUrl);
-          newCustomization.logo_url = imageUrl;
-        } else {
-          setPreviewBanner(imageUrl);
-          newCustomization.banner_image = imageUrl;
-        }
-        
-        try {
-          await updateCustomization(newCustomization);
-        } catch (error) {
-          setSaveError('Failed to save image');
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Check file size (limit to 2MB)
+    const fileLimit = 2 * 1024 * 1024;
+    if (file.size > fileLimit) {
+        setSaveError('Image size too large. Please use images under 2MB.');
+        return;
     }
+
+    // Show immediate preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const imageUrl = e.target.result;
+        if (type === 'logo') {
+            setPreviewLogo(imageUrl);
+        }
+    };
+    reader.readAsDataURL(file);
+
+    try {
+        // NEW: Call the dedicated upload function from the context
+        const response = await handleLogoUpload(file);
+        if (response.success) {
+            console.log("Logo upload successful:", response.url);
+            setSaveError(null); // Clear any previous errors
+        } else {
+            setSaveError('Failed to upload logo: ' + response.message);
+            // Revert preview if upload fails
+            if (type === 'logo') {
+                setPreviewLogo(customization.logo_url);
+            }
+        }
+    } catch (error) {
+        console.error('Error during logo upload:', error);
+        setSaveError('Failed to upload image. Please try again.');
+        if (type === 'logo') {
+            setPreviewLogo(customization.logo_url);
+        }
+    }
+  };
+
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
   };
 
   const handleRequestAccess = async () => {
     try {
-      const response = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock', {
-        company_id: company.company_id
-      });
+        // First API call
+        const testApiUrl = 'https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock';
+        const testApiRequestData = {
+          company_id: company.company_id
+        };
+        const testApiResponse = await axios.post(testApiUrl, testApiRequestData);
 
-      console.log(response.data);
-      
-      // Only update if the API call was successful
-      if (response.data.success) {
-        // Update the context to reflect the new status
-        updateCustomization({
-          ...customization,
-          status: 'unlock_requested'
-        });
-      } else {
-        throw new Error(response.data.message || 'Failed to request unlock');
-      }
+        if (testApiResponse.data.success) {
+            updateCustomization({
+                ...customization,
+                status: 'unlock_requested'
+            });
+            console.log("Request sent successfully to Dynamic Real Estate Marketing API.");
+        } else {
+            throw new Error(testApiResponse.data.message || 'Failed to request unlock from Dynamic Real Estate Marketing.');
+        }
+
+        // Second API call
+        try {
+            // 1. Get the domain
+            const companyResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/company/${company.company_id}`);
+            const domain = companyResponse.data.data.domain;
+            
+            if (domain) {
+                // 2. Get the new company ID using the domain
+                const domainResponse = await axios.get(`https://gravity.et/backend/api/companies/domain/${domain}`);
+                const newCompanyId = domainResponse.data.data.company_id; 
+
+                if (newCompanyId) {
+                    // 3. Post the request using the new ID
+                    const gravityApiUrl = 'https://gravity.et/backend/api/customizations/request-unlock';
+                    const gravityApiRequestData = {
+                      company_id: newCompanyId
+                    };
+                    await axios.post(gravityApiUrl, gravityApiRequestData);
+                    console.log("Request sent successfully to Gravity.et API.");
+                } else {
+                    console.error('Gravity.et API Error: Could not get new company ID for domain:', domain);
+                }
+            } else {
+                console.error('Dynamic Real Estate Marketing API Error: Could not get domain for company ID:', company.company_id);
+            }
+        } catch (gravityError) {
+            console.error('Error with Gravity.et API request:', gravityError);
+            // Optionally, you could set a separate state for this error if needed
+        }
+
     } catch (error) {
-      setSaveError(error.response?.data?.message || 'Failed to send unlock request');
+        setSaveError(error.response?.data?.message || 'Failed to send unlock request.');
     }
   };
 
@@ -205,7 +253,7 @@ const UpdateInformation = () => {
 
     try {
         await updateCustomization(customization);
-        await updateStatus('locked'); 
+        await updateStatus('locked');
         
         setSaveSuccess('Changes saved successfully and customization locked!');
 
@@ -474,27 +522,8 @@ const UpdateInformation = () => {
               )}
             </div>
 
-            {/* Banner Preview */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Banner Image
-              </label>
-              {previewBanner ? (
-                <img 
-                  src={previewBanner} 
-                  alt="Banner" 
-                  className="w-full h-32 object-cover border rounded"
-                  style={{ borderColor: `${customization.theme_button}20` }}
-                />
-              ) : (
-                <div className="w-full h-32 border-2 border-dashed rounded flex items-center justify-center opacity-50" style={{ borderColor: customization.theme_button }}>
-                  No Banner
-                </div>
-              )}
-            </div>
-
             {/* Description */}
-            {/* <div className="md:col-span-2">
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2">
                 Description
               </label>
@@ -504,7 +533,7 @@ const UpdateInformation = () => {
               }}>
                 {customization.description || 'No description set'}
               </p>
-            </div> */}
+            </div>
           </div>
             <div className="md:col-span-2">
                 <h3 className="text-md font-medium mb-3">Font Settings</h3>
@@ -782,74 +811,38 @@ const UpdateInformation = () => {
             {/* Logo Upload */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Upload Logo
+                  Upload Logo
               </label>
               <div className="flex items-center gap-4">
-                {previewLogo && (
-                  <img 
-                    src={previewLogo} 
-                    alt="Logo preview" 
-                    className="w-16 h-16 object-contain border rounded"
-                    style={{ borderColor: `${customization.theme_button}20` }}
-                  />
-                )}
-                <label 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
-                  style={{ 
-                    backgroundColor: `${customization.theme_button}10`,
-                    color: customization.theme_text
-                  }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
-                  onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
-                >
-                  <FaImage />
-                  Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'logo')}
-                    className="hidden"
-                    disabled={isLocked || requestSent}
-                  />
-                </label>
+                  {previewLogo && (
+                      <img 
+                          src={previewLogo} 
+                          alt="Logo preview" 
+                          className="w-16 h-16 object-contain border rounded"
+                          style={{ borderColor: `${customization.theme_button}20` }}
+                      />
+                  )}
+                  <label 
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
+                      style={{ 
+                          backgroundColor: `${customization.theme_button}10`,
+                          color: customization.theme_text
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
+                      onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
+                  >
+                      <FaImage />
+                      Choose File
+                      <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'logo')}
+                          className="hidden"
+                          disabled={isLocked || requestSent}
+                      />
+                  </label>
               </div>
-            </div>
-
-            {/* Banner Upload */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Upload Banner
-              </label>
-              <div className="flex items-center gap-4">
-                {previewBanner && (
-                  <img 
-                    src={previewBanner} 
-                    alt="Banner preview" 
-                    className="w-32 h-16 object-cover border rounded"
-                    style={{ borderColor: `${customization.theme_button}20` }}
-                  />
-                )}
-                <label 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
-                  style={{ 
-                    backgroundColor: `${customization.theme_button}10`,
-                    color: customization.theme_text
-                  }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
-                  onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
-                >
-                  <FaImage />
-                  Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'banner')}
-                    className="hidden"
-                    disabled={isLocked || requestSent}
-                  />
-                </label>
-              </div>
-            </div>
+          </div>
 
             <div>
                 <label className="block text-sm font-medium mb-3">
@@ -937,7 +930,7 @@ const UpdateInformation = () => {
             </div>
 
             {/* Description */}
-            {/* <div>
+            <div>
               <label className="block text-sm font-medium mb-2">
                 Company Description
               </label>
@@ -952,9 +945,9 @@ const UpdateInformation = () => {
                   focusRingColor: customization.theme_button
                 }}
                 placeholder="Enter company description..."
-                disabled={isLocked}
+                disabled={isLocked || requestSent}
               />
-            </div> */}
+            </div>
 
             {/* Save Button */}
             <div className="pt-4 border-t" style={{ borderColor: `${customization.theme_button}20` }}>

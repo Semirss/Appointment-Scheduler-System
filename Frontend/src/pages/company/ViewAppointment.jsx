@@ -223,7 +223,7 @@ const ViewAppointment = () => {
         branch_name: '',
         location: '',
     });
-    };
+  };
 
   const handleClientSelection = (clientId) => {
     if (clientId === 'new') {
@@ -252,7 +252,7 @@ const ViewAppointment = () => {
         setShowNewClientForm(false);
         }
     }
-    };
+  };
 
   const handleRescheduleFormSubmit = async (e) => {
     e.preventDefault();
@@ -312,60 +312,94 @@ const ViewAppointment = () => {
 //     }
 //   };
 
-    const handleNewAppointmentFormSubmit = async (e) => {
-    e.preventDefault();
-    setNewAppointmentLoading(true);
-    setNewAppointmentError('');
+  const handleNewAppointmentFormSubmit = async (e) => {
+  e.preventDefault();
+  setNewAppointmentLoading(true);
+  setNewAppointmentError('');
 
-    // Generate a random ID for new clients
-    const newClientId = showNewClientForm ? generateRandomId() : newAppointmentFormData.client_id;
+  const newClientId = showNewClientForm ? generateRandomId() : newAppointmentFormData.client_id;
 
-    // Convert to MySQL datetime format (YYYY-MM-DD HH:MM:SS)
-    const formatForMySQL = (dateString) => {
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 19).replace('T', ' ');
-    };
+  const formatForMySQL = (dateString) => {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+  };
 
-    const payload = {
-        company_id: companyId,
-        client_id: newClientId, // Use the generated ID for new clients
-        service_id: parseInt(newAppointmentFormData.service_id),
-        start_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.start_time}`)),
-        end_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.end_time}`)),
-        status: 'scheduled',
-        branch_name: newAppointmentFormData.branch_name,
-        location: newAppointmentFormData.location,
-        // Include client data as individual fields (not nested object)
-        name: showNewClientForm ? newAppointmentFormData.name : '',
-        email: showNewClientForm ? newAppointmentFormData.email : '',
-        phone: showNewClientForm ? newAppointmentFormData.phone : '',
-        telegram_id: showNewClientForm ? newAppointmentFormData.telegram_id : '',
-        address: showNewClientForm ? newAppointmentFormData.address : ''
-    };
+  const payload = {
+    company_id: companyId,
+    client_id: newClientId,
+    service_id: parseInt(newAppointmentFormData.service_id),
+    start_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.start_time}`)),
+    end_time: formatForMySQL(new Date(`${newAppointmentFormData.date}T${newAppointmentFormData.end_time}`)),
+    status: 'scheduled',
+    branch_name: newAppointmentFormData.branch_name,
+    location: newAppointmentFormData.location,
+    name: showNewClientForm ? newAppointmentFormData.name : '',
+    email: showNewClientForm ? newAppointmentFormData.email : '',
+    phone: showNewClientForm ? newAppointmentFormData.phone : '',
+    telegram_id: showNewClientForm ? newAppointmentFormData.telegram_id : '',
+    address: showNewClientForm ? newAppointmentFormData.address : ''
+  };
 
-    try {
-        console.log("Sending payload:", payload);
-        const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
-          setShowNewAppointmentModal(false);
-        // Refresh the appointments list
-        const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
-          setAppointments(appointmentsResponse.data.data || []);
-        // Refresh clients list if a new client was created
-        if (showNewClientForm) {
+  try {
+    const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
+    
+    if (response.data.success === true) {
+      setShowNewAppointmentModal(false);
+
+      const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
+      setAppointments(appointmentsResponse.data.data || []);
+      if (showNewClientForm) {
         const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
-          setAvailableClients(clientsResponse.data.data || []);
-        }
-    } catch (error) {
-        console.error('Error creating new appointment:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-        setNewAppointmentError(error.response.data.message);
+        setAvailableClients(clientsResponse.data.data || []);
+      }
+
+      await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/companies/incrementAppointmentCount/${companyId}`)
+
+      let companyDomain = '';
+      try {
+        const companyResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/company/${companyId}`);
+        if (companyResponse.data.success && companyResponse.data.data) {
+          companyDomain = companyResponse.data.data.domain;
         } else {
-        setNewAppointmentError('Failed to create new appointment. Please try again.');
+          console.error('Company not found or failed to retrieve company data.');
         }
-    } finally {
-        setNewAppointmentLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch company details:', error);
+      }
+      
+      console.log("Company domain", companyDomain);
+
+      if (companyDomain) {
+        const domainResponse = await axios.get(`https://gravity.et/backend/api/companies/domain/${companyDomain}`);
+        
+        if (domainResponse.data.success && domainResponse.data.data) {
+          const newCompanyId = domainResponse.data.data.company_id;
+          console.log("Company id", newCompanyId);
+          
+          const countResponse = await axios.put(`https://gravity.et/backend/api/companies/incrementAppointmentCount/${newCompanyId}`);
+          
+          console.log("Appointment count updated:", countResponse.data);
+        } else {
+          console.error('Failed to get company ID from domain.');
+        }
+      } else {
+        console.warn('No company domain found in the appointment creation response.');
+      }
+    } else {
+      setNewAppointmentError(response.data.message || 'Failed to create new appointment.');
     }
-    };
+  } catch (error) {
+    console.error('Error creating new appointment:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      setNewAppointmentError(error.response.data.message);
+    } else {
+      setNewAppointmentError('Failed to create new appointment. Please try again.');
+    }
+  } finally {
+    setNewAppointmentLoading(false);
+  }
+};
+
 
   const toggleDropdown = (id) => {
     setShowDropdown(prev => ({
@@ -376,14 +410,51 @@ const ViewAppointment = () => {
   };
 
   const handleDeleteAppointment = async (id) => {
+    // alert('Are you sure you want to delete this appointment? This action cannot be undone.');
     // Optimistically remove the appointment from the UI
     const originalAppointments = appointments;
     setAppointments(appointments.filter(app => app.appointment_id !== id));
     setShowDropdown({}); // Close the dropdown
 
+    console.log(id)
+    console.log(companyId)
+
     try {
       await axios.delete(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/${id}`);
       // Success is handled by the optimistic update
+
+      await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/companies/decrementAppointmentCount/${companyId}`)
+
+      let companyDomain = '';
+      try {
+        const companyResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/company/${companyId}`);
+        if (companyResponse.data.success && companyResponse.data.data) {
+          companyDomain = companyResponse.data.data.domain;
+        } else {
+          console.error('Company not found or failed to retrieve company data.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch company details:', error);
+      }
+      
+      console.log("Company domain", companyDomain);
+
+      if (companyDomain) {
+        const domainResponse = await axios.get(`https://gravity.et/backend/api/companies/domain/${companyDomain}`);
+        
+        if (domainResponse.data.success && domainResponse.data.data) {
+          const newCompanyId = domainResponse.data.data.company_id;
+          console.log("Company id", newCompanyId);
+          
+          const countResponse = await axios.put(`https://gravity.et/backend/api/companies/decrementAppointmentCount/${newCompanyId}`);
+          
+          console.log("Appointment count updated:", countResponse.data);
+        } else {
+          console.error('Failed to get company ID from domain.');
+        }
+      } else {
+        console.warn('No company domain found in the appointment creation response.');
+      }
     } catch (error) {
       console.error('Error deleting appointment:', error);
       // Revert the UI if the deletion fails
