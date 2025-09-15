@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+zimport React, { useState, useEffect, useRef } from 'react';
 import { FaLock, FaUnlock, FaPalette, FaImage, FaSave, FaPaperPlane, FaInfoCircle, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
 import axios from 'axios';
 import { useCompany } from '../../context/CompanyContext';
 
 const UpdateInformation = () => {
+<<<<<<< HEAD
+  const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading, handleLogoUpload } = useCustomization();
+=======
   const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading } = useCustomization();
+>>>>>>> main
   const { company } = useCompany();
   
   // Derive states directly from customization.status
@@ -23,8 +27,12 @@ const UpdateInformation = () => {
   // Load initial data
   useEffect(() => {
     setPreviewLogo(customization.logo_url);
+<<<<<<< HEAD
+  }, [customization.logo_url]);
+=======
     setPreviewBanner(customization.banner_image);
   }, [customization.logo_url, customization.banner_image]);
+>>>>>>> main
 
     // Polling effect to check for status changes
   useEffect(() => {
@@ -91,6 +99,8 @@ const UpdateInformation = () => {
     { name: 'X-Large', value: '20px' },
   ];
 
+<<<<<<< HEAD
+=======
   // Load initial data
   // useEffect(() => {
   //   setPreviewLogo(customization.logo_url);
@@ -99,6 +109,7 @@ const UpdateInformation = () => {
   //   setRequestSent(customization.status === 'unlock_requested');
   // }, [customization]);
 
+>>>>>>> main
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     updateCustomization({
@@ -164,6 +175,7 @@ const UpdateInformation = () => {
     }
   };
 
+<<<<<<< HEAD
   // Helper function to convert file to base64
   const convertFileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -174,6 +186,58 @@ const UpdateInformation = () => {
     });
   };
 
+  const handleRequestAccess = async () => {
+    try {
+        // First API call
+        const testApiUrl = 'https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock';
+        const testApiRequestData = {
+          company_id: company.company_id
+        };
+        const testApiResponse = await axios.post(testApiUrl, testApiRequestData);
+
+        if (testApiResponse.data.success) {
+            updateCustomization({
+                ...customization,
+                status: 'unlock_requested'
+            });
+            console.log("Request sent successfully to Dynamic Real Estate Marketing API.");
+        } else {
+            throw new Error(testApiResponse.data.message || 'Failed to request unlock from Dynamic Real Estate Marketing.');
+        }
+
+        // Second API call
+        try {
+            // 1. Get the domain
+            const companyResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/company/${company.company_id}`);
+            const domain = companyResponse.data.data.domain;
+            
+            if (domain) {
+                // 2. Get the new company ID using the domain
+                const domainResponse = await axios.get(`https://gravity.et/backend/api/companies/domain/${domain}`);
+                const newCompanyId = domainResponse.data.data.company_id; 
+
+                if (newCompanyId) {
+                    // 3. Post the request using the new ID
+                    const gravityApiUrl = 'https://gravity.et/backend/api/customizations/request-unlock';
+                    const gravityApiRequestData = {
+                      company_id: newCompanyId
+                    };
+                    await axios.post(gravityApiUrl, gravityApiRequestData);
+                    console.log("Request sent successfully to Gravity.et API.");
+                } else {
+                    console.error('Gravity.et API Error: Could not get new company ID for domain:', domain);
+                }
+            } else {
+                console.error('Dynamic Real Estate Marketing API Error: Could not get domain for company ID:', company.company_id);
+            }
+        } catch (gravityError) {
+            console.error('Error with Gravity.et API request:', gravityError);
+            // Optionally, you could set a separate state for this error if needed
+        }
+
+    } catch (error) {
+        setSaveError(error.response?.data?.message || 'Failed to send unlock request.');
+=======
   const handleRequestAccess = async () => {
     try {
       const response = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock', {
@@ -194,6 +258,7 @@ const UpdateInformation = () => {
       }
     } catch (error) {
       setSaveError(error.response?.data?.message || 'Failed to send unlock request');
+>>>>>>> main
     }
   };
 
@@ -231,7 +296,11 @@ const UpdateInformation = () => {
 
     try {
         await updateCustomization(customization);
+<<<<<<< HEAD
+        await updateStatus('locked');
+=======
         await updateStatus('locked'); 
+>>>>>>> main
         
         setSaveSuccess('Changes saved successfully and customization locked!');
 
@@ -792,6 +861,37 @@ const UpdateInformation = () => {
                   Upload Logo
               </label>
               <div className="flex items-center gap-4">
+<<<<<<< HEAD
+                  {previewLogo && (
+                      <img 
+                          src={previewLogo} 
+                          alt="Logo preview" 
+                          className="w-16 h-16 object-contain border rounded"
+                          style={{ borderColor: `${customization.theme_button}20` }}
+                      />
+                  )}
+                  <label 
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
+                      style={{ 
+                          backgroundColor: `${customization.theme_button}10`,
+                          color: customization.theme_text
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
+                      onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
+                  >
+                      <FaImage />
+                      Choose File
+                      <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'logo')}
+                          className="hidden"
+                          disabled={isLocked || requestSent}
+                      />
+                  </label>
+              </div>
+          </div>
+=======
                 {previewLogo && (
                   <img 
                     src={previewLogo} 
@@ -856,7 +956,8 @@ const UpdateInformation = () => {
                   />
                 </label>
               </div>
-          </div>
+            </div>
+>>>>>>> main
 
             <div>
                 <label className="block text-sm font-medium mb-3">

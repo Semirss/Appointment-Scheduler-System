@@ -198,10 +198,17 @@ export default function AppointmentBooking() {
     try {
       let clientId;
       let addressId = null;
+<<<<<<< HEAD
+
+      // Get company addresses first
+      const addressesResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${formData.company_id}`);
+
+=======
       
       // Get company addresses first
       const addressesResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/addresses/${formData.company_id}`);
       
+>>>>>>> main
       if (addressesResponse.ok) {
         const addressesData = await addressesResponse.json();
         // Use the first address if available
@@ -209,7 +216,11 @@ export default function AppointmentBooking() {
           addressId = addressesData.data[0].address_id;
         }
       }
+<<<<<<< HEAD
+
+=======
       
+>>>>>>> main
       // Create or get user
       const userResponse = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/users`, {
         method: "POST",
@@ -221,7 +232,11 @@ export default function AppointmentBooking() {
           email: formData.email,
           phone: formData.phone || null,
           telegram_id: null,
+<<<<<<< HEAD
+          address: formData.address || null
+=======
           address: formData.address || null // Add address field if needed
+>>>>>>> main
         }),
       });
 
@@ -250,7 +265,11 @@ export default function AppointmentBooking() {
         start_time: formatDateTimeForMySQL(startTime),
         end_time: formatDateTimeForMySQL(endTime),
         status: "scheduled",
+<<<<<<< HEAD
+        address_id: addressId
+=======
         address_id: addressId // Add address_id to appointment
+>>>>>>> main
       };
 
       console.log("Sending appointment data:", appointmentData);

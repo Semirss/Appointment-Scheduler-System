@@ -390,30 +390,6 @@ const EnhancedAdmin = ({ onLogout }) => {
       }
     }
 
-    else if (type === "unlock_requested" && data) {
-      newActivity = {
-        company_id: id,
-        title: "New unlock request",
-        description: `${data} requested unlock status`,
-        time: "Just now",
-        icon: Building2,
-        color: "bg-orange-500",
-        timestamp: now,
-      };
-    }
-
-    else if (type === "unlock_requested" && data) {
-      newActivity = {
-        title: "New unlock request",
-        description: `${data.company_name} requested unlock status`,
-        time: "Just now",
-        icon: Building2, // or another relevant icon
-        color: "bg-orange-500",
-        timestamp: now,
-        company_id: data.company_id // <-- Add the company ID here
-      };
-    }
-
     if (Object.keys(newActivity).length > 0) {
       setRecentActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 activities
       setUnreadActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 unread activities
@@ -491,9 +467,9 @@ const EnhancedAdmin = ({ onLogout }) => {
     };
   }, []);
 
-  // const getCompanyAppointmentCount = (companyId) => {
-  //   return appointments.filter((apt) => apt.company_id === companyId).length
-  // }
+  const getCompanyAppointmentCount = (companyId) => {
+    return appointments.filter((apt) => apt.company_id === companyId).length
+  }
 
   const handleNavigation = (page) => {
     setCurrentPage(page)
@@ -510,7 +486,7 @@ const EnhancedAdmin = ({ onLogout }) => {
             appointments={appointments}
             isLoadingAppointments={isLoadingAppointments}
             recentActivities={recentActivities}
-            // getCompanyAppointmentCount={getCompanyAppointmentCount}
+            getCompanyAppointmentCount={getCompanyAppointmentCount}
           />
         )
       case "addCompany":
@@ -521,7 +497,7 @@ const EnhancedAdmin = ({ onLogout }) => {
             companies={companies}
             isLoading={isLoadingCompanies}
             error={companiesError}
-            // getCompanyAppointmentCount={getCompanyAppointmentCount}
+            getCompanyAppointmentCount={getCompanyAppointmentCount}
             onEdit={handleEditCompany}
             onDelete={handleDeleteCompany}
             onView={handleViewCompany}
@@ -670,7 +646,7 @@ const ModernDashboardView = ({
   appointments = [],
   isLoadingAppointments = false,
   recentActivities = [],
-  // Remove getCompanyAppointmentCount since we don't need it anymore
+  getCompanyAppointmentCount = () => 0,
 }) => {
   const [selectedTimeRange, setSelectedTimeRange] = useState("7d")
 
@@ -685,7 +661,7 @@ const ModernDashboardView = ({
     },
     {
       title: "Total Appointments",
-      value: isLoading ? "..." : companies.reduce((total, company) => total + (company.appointmentCount || 0), 0).toString(),
+      value: isLoadingAppointments ? "..." : appointments.length.toString(),
       change: "+8%",
       trend: "up",
       icon: Calendar,
@@ -704,7 +680,7 @@ const ModernDashboardView = ({
   const topCompaniesData = companies
     .map((company) => ({
       company: company.name,
-      count: company.appointmentCount || 0, // Use the appointmentCount field directly
+      count: getCompanyAppointmentCount(company.company_id),
       status: company.status === "Active" ? "High" : "Medium",
       growth: `+${Math.floor(Math.random() * 25) + 5}%`,
       avatar: company.name
@@ -713,9 +689,9 @@ const ModernDashboardView = ({
         .join("")
         .slice(0, 2),
     }))
-    .filter((item) => item.count > 0) // Only show companies with appointments
-    .sort((a, b) => b.count - a.count) // Sort by appointment count descending
-    .slice(0, 5) // Top 5 companies
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
 
   return (
     <div className="space-y-4">
@@ -1555,7 +1531,7 @@ const ModernViewCompaniesList = ({
   companies = [],
   isLoading = false,
   error = null,
-  // getCompanyAppointmentCount = () => 0,
+  getCompanyAppointmentCount = () => 0,
   onEdit = () => {},
   onDelete = () => {},
   onView = () => {},
@@ -1841,3 +1817,4 @@ const ModernViewCompaniesList = ({
 }
 
 export default EnhancedAdmin
+zz
