@@ -1817,4 +1817,3 @@ const ModernViewCompaniesList = ({
 }
 
 export default EnhancedAdmin
-zz

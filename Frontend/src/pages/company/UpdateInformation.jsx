@@ -1,4 +1,4 @@
-zimport React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaLock, FaUnlock, FaPalette, FaImage, FaSave, FaPaperPlane, FaInfoCircle, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useCustomization } from '../../context/CustomizationContext';
 import axios from 'axios';
