@@ -15,12 +15,14 @@ const Header = ({ isCollapsed }) => {
     const [error, setError] = useState(null);
     const { company } = useCompany();
     const companyId = company?.company_id;
+
     const lastCheckedRef = useRef(new Date());
 
     const fetchAppointments = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
+
             const response = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`, {
                 headers: {
                     "Content-Type": "application/json",

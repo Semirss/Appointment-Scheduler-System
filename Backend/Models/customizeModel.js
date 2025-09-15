@@ -92,10 +92,28 @@ const deleteCustomizationModel = async (id) => {
   await mySqlConnection.query(sql, [id]);
 };
 
+const requestUnlockModel = async (company_id) => {
+  const sql = `UPDATE company_customization SET status = 'unlock_requested' WHERE company_id = ?`;
+  await mySqlConnection.query(sql, [company_id]);
+};
+
+const unlockCustomizationModel = async (company_id) => {
+  const sql = `UPDATE company_customization SET status = 'unlocked' WHERE company_id = ?`;
+  await mySqlConnection.query(sql, [company_id]);
+};
+
+const lockCustomizationModel = async (company_id) => {
+  const sql = `UPDATE company_customization SET status = 'locked' WHERE company_id = ?`;
+  await mySqlConnection.query(sql, [company_id]);
+};
+
 export {
   getCustomizationsModel,
   getCustomizationByCompanyIdModel,
   addCustomizationModel,
   updateCustomizationModel,
-  deleteCustomizationModel
+  deleteCustomizationModel,
+  requestUnlockModel,
+  unlockCustomizationModel,
+  lockCustomizationModel
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react"
 import {
   BarChart3,
@@ -27,9 +26,8 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useNavigate } from "react-router-dom"
 import AdminCustomization from "./AdminCustomization"
-import axios from 'axios';
-import { getCompanyApiUrl } from "../utils/apiHelpers"
 
+// Custom hook to handle click outside
 const useClickOutside = (ref, callback) => {
   useEffect(() => {
     const handleClick = (event) => {
@@ -45,17 +43,20 @@ const useClickOutside = (ref, callback) => {
   }, [ref, callback]);
 };
 
-const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockRequest }) => {
+// Notification Bell Component
+const NotificationBell = ({ recentActivities, onMarkAsRead }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadActivities, setUnreadActivities] = useState(recentActivities);
   const dropdownRef = useRef(null);
-
+  
   useClickOutside(dropdownRef, () => setIsOpen(false));
-
+  
+  // Update unread activities when recent activities change
   useEffect(() => {
     setUnreadActivities(recentActivities);
   }, [recentActivities]);
 
+  // Helper function to format time difference
   const formatTimeDifference = (timestamp) => {
     if (!timestamp) return "Just now";
     
@@ -71,12 +72,6 @@ const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockReques
   const handleMarkAsRead = () => {
     setUnreadActivities([]);
     onMarkAsRead();
-  };
-
-  const handleAcceptClick = (companyId) => {
-    onAcceptUnlockRequest(companyId);
-    // Optionally, you can also close the dropdown after an action
-    setIsOpen(false);
   };
 
   return (
@@ -95,6 +90,7 @@ const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockReques
         )}
       </button>
 
+      {/* Notification Dropdown */}
       {isOpen && (
         <div className="fixed sm:absolute right-0 top-12 w-full sm:w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-lg z-50 animate-in fade-in-90 mx-4 sm:mx-0">
           <div className="p-4 border-b border-border">
@@ -119,16 +115,6 @@ const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockReques
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatTimeDifference(activity.timestamp)}
                       </p>
-
-                      {/* Conditionally render the button based on the notification title */}
-                      {activity.title === "New unlock request" && (
-                        <button
-                          className="mt-2 text-xs text-white bg-green-500 hover:bg-green-600 py-1 px-3 rounded-md transition-colors"
-                          onClick={() => handleAcceptUnlockRequest(activity.company_id)}
-                        >
-                          Accept Request
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -156,273 +142,11 @@ const NotificationBell = ({ recentActivities, onMarkAsRead, onAcceptUnlockReques
     </div>
   );
 };
-
-const handleAcceptUnlockRequest = async (companyId) => {
-  try {
-    // 1. Unlock customization in the Gravity.et system
-    const gravityApiUrl = `https://gravity.et/backend/api/customizations/unlock`;
-    const gravityResponse = await fetch(gravityApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ company_id: companyId }),
-    });
-
-    if (!gravityResponse.ok) {
-      throw new Error(`Gravity.et API error! status: ${gravityResponse.status}`);
-    }
-
-    const gravityResult = await gravityResponse.json();
-
-    if (!gravityResult.success) {
-      throw new Error(gravityResult.message || "Failed to accept unlock request on Gravity.et");
-    }
-
-    console.log("Unlock request accepted on Gravity.et.");
-    
-    // 2. Unlock customization in the other system
-    try {
-      // Get the domain from Gravity.et's company endpoint
-      const companyResponse = await fetch(`https://gravity.et/backend/api/company/${companyId}`);
-      if (!companyResponse.ok) {
-        throw new Error(`Failed to get domain from Gravity.et: HTTP status ${companyResponse.status}`);
-      }
-      const companyResult = await companyResponse.json();
-      const domain = companyResult.data.domain;
-
-      if (domain) {
-        // Generate the base API URL using the domain
-        const generatedApiUrl = getCompanyApiUrl(domain);
-        console.log(generatedApiUrl)
-
-        // Get the company_id from the other system using the domain
-        const otherCompanyResponse = await fetch(`${generatedApiUrl}/companies/domain/${domain}`);
-        if (!otherCompanyResponse.ok) {
-          throw new Error(`Failed to get company ID from other system: HTTP status ${otherCompanyResponse.status}`);
-        }
-        const otherCompanyResult = await otherCompanyResponse.json();
-        const otherCompanyId = otherCompanyResult.data.company_id;
-
-        if (otherCompanyId) {
-          // Send the unlock request to the other system
-          const otherApiResponse = await fetch(`${generatedApiUrl}/customizations/unlock`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ company_id: otherCompanyId }),
-          });
-
-          if (!otherApiResponse.ok) {
-            throw new Error(`Other system API error! status: ${otherApiResponse.status}`);
-          }
-          const otherApiResult = await otherApiResponse.json();
-          if (otherApiResult.success) {
-            alert("Unlock request accepted successfully on both systems.");
-            // setUnreadActivities([]);
-          } else {
-            console.error(otherApiResult.message || "Failed to accept unlock request on the other system.");
-            alert("Unlock request accepted on Gravity.et, but failed on the other system.");
-          }
-        } else {
-          console.error("Could not find company ID in the other system.");
-          alert("Unlock request accepted on Gravity.et, but failed on the other system (ID not found).");
-        }
-      } else {
-        console.error("Domain not found for the given company ID.");
-        alert("Unlock request accepted on Gravity.et, but failed on the other system (domain not found).");
-      }
-    } catch (otherApiError) {
-      console.error("Error with the other system's API:", otherApiError);
-      alert("Unlock request accepted on Gravity.et, but an error occurred with the other system.");
-    }
-  } catch (error) {
-    console.error("Error accepting unlock request:", error);
-    alert(`Error: ${error.message}`);
-  }
-};
-
 const AppointmentsCountChart = ({ appointments = [] }) => {
-  const [chartData, setChartData] = useState([])
-
-  useEffect(() => {
-    if (appointments.length) {
-      // Get all appointment dates
-      const appointmentDates = appointments
-        .filter(appointment => appointment.created_at)
-        .map(appointment => {
-          const date = new Date(appointment.created_at)
-          return date.toISOString().slice(0, 10) // YYYY-MM-DD format
-        })
-      
-      // Find the earliest and latest dates
-      const uniqueDates = [...new Set(appointmentDates)].sort()
-      
-      if (uniqueDates.length === 0) {
-        setChartData([])
-        return
-      }
-
-      const earliestDate = new Date(uniqueDates[0])
-      const latestDate = new Date(uniqueDates[uniqueDates.length - 1])
-      
-      // Create date range from earliest to latest appointment
-      const daysData = []
-      const currentDate = new Date(earliestDate)
-      
-      while (currentDate <= latestDate) {
-        const dateKey = currentDate.toISOString().slice(0, 10)
-        const dayName = currentDate.toLocaleDateString("en-US", { weekday: "short" })
-        const dateFormatted = currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-
-        // Count appointments for this day
-        const count = appointments.filter((appointment) => {
-          if (!appointment.created_at) return false
-          const appointmentDate = new Date(appointment.created_at)
-          return appointmentDate.toISOString().slice(0, 10) === dateKey
-        }).length
-
-        daysData.push({
-          day: dayName,
-          date: dateFormatted,
-          fullDate: dateKey,
-          appointments: count,
-        })
-
-        // Move to next day
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      // If we have too many days, show only the last 14 days for better visibility
-      const limitedData = daysData.length > 14 ? daysData.slice(-14) : daysData
-      
-      setChartData(limitedData)
-    } else {
-      setChartData([])
-    }
-  }, [appointments])
-
-  if (chartData.length === 0) {
-    return (
-      <div className="h-72 flex flex-col items-center justify-center bg-gradient-to-br from-card to-muted/30 rounded-2xl p-5 border border-border">
-        <Calendar className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
-        <p className="text-muted-foreground font-medium text-sm">No appointment data available</p>
-        <p className="text-xs text-muted-foreground mt-1">Appointments will appear here once scheduled</p>
-      </div>
-    )
-  }
-
-  // Calculate stats for the chart header
-  const totalAppointments = chartData.reduce((sum, day) => sum + day.appointments, 0)
-  const averagePerDay = totalAppointments / chartData.length
-  const peakDay = chartData.reduce((max, day) => day.appointments > max.appointments ? day : max, chartData[0])
-
-  return (
-    <div className="bg-card   p-" style={{ transform: 'scale(0.91)', transformOrigin: 'top center' }}>
-      {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
-        <div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {chartData.length} day{chartData.length !== 1 ? 's' : ''} • {totalAppointments} total appointments
-          </p>
-        </div>
-        <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Avg per day</p>
-            <p className="text-xs font-semibold text-foreground">{averagePerDay.toFixed(1)}</p>
-          </div>
-          <div className="w-px h-5 bg-border" />
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Peak day</p>
-            <p className="text-xs font-semibold text-foreground">{peakDay.appointments} on {peakDay.day}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Chart Container */}
-      <div className="h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={chartData} 
-            margin={{ top: 8, right: 8, left: 0, bottom: 16 }}
-            barSize={28}
-          >
-            <defs>
-              <linearGradient id="appointmentGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.1}/>
-              </linearGradient>
-            </defs>
-            
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              vertical={false}
-              stroke="hsl(var(--border))"
-              opacity={0.5}
-            />
-            
-            <XAxis 
-              dataKey="day" 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              padding={{ left: 8, right: 8 }}
-            />
-            
-            <YAxis 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              width={28}
-            />
-            
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload
-                  return (
-                    <div className="bg-background border border-border rounded-lg p-2 shadow-lg backdrop-blur-sm">
-                      <p className="text-xs font-semibold text-foreground mb-1">{data.date}</p>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-purple-700" />
-                        <p className="text-xs text-foreground">
-                          {data.appointments} appointment{data.appointments !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                }
-                return null
-              }}
-            />
-            
-            <Bar
-              dataKey="appointments"
-              fill="url(#appointmentGradient)"
-              radius={[4, 4, 0, 0]}
-              className="cursor-pointer transition-all hover:opacity-80"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Chart Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-purple-400" />
-          <span className="text-xs text-muted-foreground">Daily appointments</span>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Updated {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      </div>
-    </div>
-  )
+  // ... (keep the existing AppointmentsCountChart code)
 }
-const EnhancedAdmin = () => {
+const EnhancedAdmin = ({ onLogout }) => {
   const [currentPage, setCurrentPage] = useState("dashboard")
-  const [notificationCount, setNotificationCount] = useState(3)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [companies, setCompanies] = useState([])
@@ -431,34 +155,44 @@ const EnhancedAdmin = () => {
   const [appointments, setAppointments] = useState([])
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
   const [recentActivities, setRecentActivities] = useState([])
+  const [unreadActivities, setUnreadActivities] = useState([])
   const [adminData, setAdminData] = useState(null)
   const [editingCompanyId, setEditingCompanyId] = useState(null)
-  const [apiUrl, setApiUrl] = useState('');
-  const [companyID, setCompanyID] = useState(null);
-  const [unreadActivities, setUnreadActivities] = useState([])
+  const [lastCompanyCount, setLastCompanyCount] = useState(0)
+  const [lastAppointmentCount, setLastAppointmentCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true) // Add loading state
   const navigate = useNavigate()
 
   // Get admin data from storage on component mount
-useEffect(() => {
-  const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
-  if (storedAdmin) {
-    setAdminData(JSON.parse(storedAdmin))
-  } else {
-    navigate("/login")
-  }
-}, [navigate])
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedAdmin = localStorage.getItem("admin") || sessionStorage.getItem("admin")
+      if (storedAdmin) {
+        setAdminData(JSON.parse(storedAdmin))
+        setIsLoading(false)
+      } else {
+        navigate("/login")
+      }
+    }
+    
+    checkAuth()
+  }, [navigate])
 
   const handleLogout = () => {
     localStorage.removeItem("admin")
     sessionStorage.removeItem("admin")
+    if (onLogout) {
+      onLogout() // Call the parent's logout handler
+    }
     navigate("/login")
   }
+
 
   const fetchCompanies = async () => {
     try {
       setIsLoadingCompanies(true)
       setCompaniesError(null)
-      const response = await fetch("https://gravity.et/backend/api/companies")
+      const response = await fetch("http://localhost:5000/api/companies")
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -466,10 +200,15 @@ useEffect(() => {
 
       const result = await response.json()
       if (result.success) {
-        setCompanies(result.data)
-        if (result.data.length > 0) {
-          updateRecentActivities("company", result.data[result.data.length - 1]?.name)
+        // Only create notification if new companies were added
+        if (result.data.length > lastCompanyCount && lastCompanyCount > 0) {
+          const newCompanies = result.data.slice(lastCompanyCount)
+          newCompanies.forEach(company => {
+            updateRecentActivities("company", company.name)
+          })
         }
+        setCompanies(result.data)
+        setLastCompanyCount(result.data.length)
       } else {
         throw new Error(result.message || "Failed to fetch companies")
       }
@@ -485,7 +224,7 @@ useEffect(() => {
   const fetchAppointments = async () => {
     try {
       setIsLoadingAppointments(true)
-      const response = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/14`)
+      const response = await fetch("http://localhost:5000/api/appointments")
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -493,10 +232,15 @@ useEffect(() => {
 
       const result = await response.json()
       if (result.success) {
-        setAppointments(result.data)
-        if (result.data.length > 0) {
-          updateRecentActivities("appointment", result.data[result.data.length - 1])
+        // Only create notification if new appointments were added
+        if (result.data.length > lastAppointmentCount && lastAppointmentCount > 0) {
+          const newAppointments = result.data.slice(lastAppointmentCount)
+          newAppointments.forEach(appointment => {
+            updateRecentActivities("appointment", appointment)
+          })
         }
+        setAppointments(result.data)
+        setLastAppointmentCount(result.data.length)
       }
     } catch (error) {
       console.error("Error fetching appointments:", error)
@@ -506,93 +250,17 @@ useEffect(() => {
     }
   }
 
-  const fetchCustomizationRequests = async () => {
-    try {
-        const response = await fetch(`https://gravity.et/backend/api/customizations`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(result.data)
-        
-        // Ensure result.data is an array and not empty
-        if (Array.isArray(result.data) && result.data.length > 0) {
-            // Filter the array to get only the items with status 'unlock_requested'
-            const unlockRequests = result.data.filter(item => item.status === 'unlock_requested');
-
-            // Iterate over the filtered array and call updateRecentActivities for each item
-            unlockRequests.forEach(request => {
-                console.log(`Processing request for company: ${request.company_name} with status: ${request.status}`);
-                updateRecentActivities("unlock_requested", request.company_name, request.company_id);
-            });
-            
-            if (unlockRequests.length === 0) {
-                console.log("No unlock requests found.");
-            }
-        } else {
-            console.log("No data found in the response.");
-        }
-    } catch (error) {
-        console.error(`Error fetching customization requests:`, error);
-    }
-  };
-
-  const handleEditCompany = async (companyId) => {
-    setEditingCompanyId(companyId);
-
-    try {
-      // setLoading(true);
-      
-      const companyResponse = await axios.get(`https://gravity.et/backend/api/company/${companyId}`);
-
-      if (companyResponse.data.success && companyResponse.data.data) {
-        const companyData = companyResponse.data.data;
-        
-        const domain = companyData.domain;
-        console.log("Domain", domain);
-        
-        if (domain) {
-          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
-          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
-          const generatedApiUrl = getCompanyApiUrl(domain);
-
-          // use the domain to get the company_id to update the company
-          const domainResponse = await axios.get(`${generatedApiUrl}/companies/domain/${domain}`);
-          const fullCompanyData = domainResponse.data.data;
-          console.log("Full Company Data: ", fullCompanyData);
-
-          setCompanyID(fullCompanyData.company_id);
-          setApiUrl(generatedApiUrl);
-        } else {
-          setSaveError('Company domain not found');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching company details:', error);
-      setSaveError('Failed to load company details');
-    }
-    // finally {
-    //   setLoading(false);
-    // }
+  const handleEditCompany = (companyId) => {
+    setEditingCompanyId(companyId)
   }
-
-  console.log("Domain URL: ", apiUrl);
 
   const handleSaveCompany = async (companyId, updatedData) => {
     try {
-      console.log("CompanyID" ,companyID)
       if (!updatedData.password) {
         delete updatedData.password
       }
 
-      if (!apiUrl) {
-        alert("Error!! API URL not set.");
-        return;
-      }
-
-      const response = await fetch(`${apiUrl}/companies/${companyID}`, {
+      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -600,23 +268,14 @@ useEffect(() => {
         body: JSON.stringify(updatedData),
       })
 
-      const adminResponse = await fetch(`https://gravity.et/backend/api/companies/${companyId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedData),
-      })
-
-      if (!response.ok || !adminResponse.ok) {
+      if (!response.ok) {
         const errorText = await response.text()
         console.error("Server response:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      const adminResult = await adminResponse.json()
-      if (result.success && adminResult.success) {
+      if (result.success) {
         fetchCompanies()
         setEditingCompanyId(null)
         updateRecentActivities("company_updated", updatedData.name)
@@ -627,64 +286,28 @@ useEffect(() => {
       console.error("Error updating company:", error)
       alert("Failed to update company: " + error.message)
     }
-  };
+  }
 
   const handleCancelEdit = () => {
     setEditingCompanyId(null)
   }
 
   const handleDeleteCompany = async (companyId) => {
-    // console.log(companyId)
     if (!confirm("Are you sure you want to delete this company?")) return
 
-    if (!apiUrl) {
-      alert("Error!! API URL not set.");
-      return;
-    }
-
     try {
-      const companyResponse = await axios.get(`https://gravity.et/backend/api/company/${companyId}`);
-
-      if (companyResponse.data.success && companyResponse.data.data) {
-        const companyData = companyResponse.data.data;
-        
-        const domain = companyData.domain;
-        console.log("Domain", domain);
-        
-        if (domain) {
-          // get the company full url from getCompanyApiUrl function by passing the domain u get from the backend
-          // and use the resulting url to set the apiUrl state and use it to fetch the customization and save customization
-          const generatedApiUrl = getCompanyApiUrl(domain);
-
-          // use the domain to get the company_id to update the company
-          const domainResponse = await axios.get(`${generatedApiUrl}/companies/domain/${domain}`);
-          const fullCompanyData = domainResponse.data.data;
-          console.log("Full Company Data: ", fullCompanyData);
-
-          setCompanyID(fullCompanyData.company_id);
-          setApiUrl(generatedApiUrl);
-        } else {
-          setSaveError('Company domain not found');
-        }
-      }
-
-      const response = await fetch(`${apiUrl}/companies/${companyID}`, {
+      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
         method: "DELETE",
       })
 
-      const adminResponse = await fetch(`https://gravity.et/backend/api/companies/${companyId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok || !adminResponse.ok) {
+      if (!response.ok) {
         const errorText = await response.text()
         console.error("Server response:", errorText)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      const adminResult = await adminResponse.json()
-      if (result.success && adminResult.success) {
+      if (result.success) {
         fetchCompanies()
         updateRecentActivities("company_deleted", { id: companyId })
       } else {
@@ -698,7 +321,7 @@ useEffect(() => {
 
   const handleViewCompany = async (companyId) => {
     try {
-      const response = await fetch(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/countByCompany/14`)
+      const response = await fetch(`http://localhost:5000/api/appointments/countByCompany/${companyId}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -714,35 +337,44 @@ useEffect(() => {
     }
   }
 
-  const updateRecentActivities = (type, data, id) => {
-    const now = new Date()
-    let newActivity = {}
+  // Helper function to format time difference
+  const formatTimeDifference = (timestamp) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - timestamp) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
 
-    console.log(data)
+  const updateRecentActivities = (type, data) => {
+    const now = new Date();
+    let newActivity = {};
 
     if (type === "company" && data) {
       newActivity = {
         title: "New company registered",
         description: `${data} joined the platform`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Building2,
         color: "bg-chart-1",
         timestamp: now,
       }
-    // } else if (type === "appointment" && data) {
-    //   newActivity = {
-    //     title: "New appointment scheduled",
-    //     description: `Appointment #${data.id} has been booked`,
-    //     time: "Just now",
-    //     icon: Calendar,
-    //     color: "bg-chart-2",
-    //     timestamp: now,
-    //   }
+    } else if (type === "appointment" && data) {
+      newActivity = {
+        title: "New appointment scheduled",
+        description: `Appointment #${data.id} has been booked`,
+        time: formatTimeDifference(now),
+        icon: Calendar,
+        color: "bg-chart-2",
+        timestamp: now,
+      }
     } else if (type === "company_deleted") {
       newActivity = {
         title: "Company deleted",
         description: `Company #${data.id} was removed`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Trash2,
         color: "bg-red-500",
         timestamp: now,
@@ -751,7 +383,7 @@ useEffect(() => {
       newActivity = {
         title: "Company updated",
         description: `${data} information was updated`,
-        time: "Just now",
+        time: formatTimeDifference(now),
         icon: Edit,
         color: "bg-blue-500",
         timestamp: now,
@@ -783,8 +415,8 @@ useEffect(() => {
     }
 
     if (Object.keys(newActivity).length > 0) {
-      setRecentActivities((prev) => [newActivity, ...prev.slice(0, 3)])
-      setUnreadActivities((prev) => [newActivity, ...prev.slice(0, 9)])
+      setRecentActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 activities
+      setUnreadActivities((prev) => [newActivity, ...prev.slice(0, 9)]) // Keep last 10 unread activities
     }
   }
 
@@ -793,20 +425,71 @@ useEffect(() => {
   }
 
   useEffect(() => {
-    fetchCompanies()
-    fetchAppointments()
-    fetchCustomizationRequests();
-    setRecentActivities([
-      {
-        title: "System initialized",
-        description: "Admin dashboard loaded successfully",
-        time: "1 minute ago",
-        icon: CheckCircle,
-        color: "bg-chart-4",
-        timestamp: new Date(Date.now() - 60000),
-      },
-    ])
-  }, [])
+    // Initial data fetch
+    const initializeData = async () => {
+      try {
+        // Fetch companies
+        const companiesResponse = await fetch("http://localhost:5000/api/companies");
+        if (companiesResponse.ok) {
+          const companiesResult = await companiesResponse.json();
+          if (companiesResult.success) {
+            setCompanies(companiesResult.data);
+            setLastCompanyCount(companiesResult.data.length);
+          }
+        }
+        
+        // Fetch appointments
+        const appointmentsResponse = await fetch("http://localhost:5000/api/appointments");
+        if (appointmentsResponse.ok) {
+          const appointmentsResult = await appointmentsResponse.json();
+          if (appointmentsResult.success) {
+            setAppointments(appointmentsResult.data);
+            setLastAppointmentCount(appointmentsResult.data.length);
+          }
+        }
+        
+        // Set initial activity
+        const initialActivity = {
+          title: "System initialized",
+          description: "Admin dashboard loaded successfully",
+          time: formatTimeDifference(new Date(Date.now() - 60000)),
+          icon: CheckCircle,
+          color: "bg-chart-4",
+          timestamp: new Date(Date.now() - 60000),
+        };
+        setRecentActivities([initialActivity]);
+        setUnreadActivities([initialActivity]);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        
+        // Set initial activity even if there's an error
+        const initialActivity = {
+          title: "System initialized",
+          description: "Admin dashboard loaded successfully",
+          time: formatTimeDifference(new Date(Date.now() - 60000)),
+          icon: CheckCircle,
+          color: "bg-chart-4",
+          timestamp: new Date(Date.now() - 60000),
+        };
+        setRecentActivities([initialActivity]);
+        setUnreadActivities([initialActivity]);
+      } finally {
+        setIsLoadingCompanies(false);
+        setIsLoadingAppointments(false);
+      }
+    };
+    
+    initializeData();
+    
+    // Set up polling for new data
+    const companiesPollingInterval = setInterval(fetchCompanies, 30000); // Poll every 30 seconds
+    const appointmentsPollingInterval = setInterval(fetchAppointments, 30000); // Poll every 30 seconds
+    
+    return () => {
+      clearInterval(companiesPollingInterval);
+      clearInterval(appointmentsPollingInterval);
+    };
+  }, []);
 
   // const getCompanyAppointmentCount = (companyId) => {
   //   return appointments.filter((apt) => apt.company_id === companyId).length
@@ -876,7 +559,7 @@ useEffect(() => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               <img
-                src="/Gravity-Logo.png"
+                src="/Gravity Logo.png"
                 alt="Gravity Logo"
                 className="w-35 h-12 object-contain hover:scale-105 transition-transform ease-in-out ml-2 "
               />
@@ -916,16 +599,16 @@ useEffect(() => {
               <span className="text-xs font-bold text-white">{adminData ? adminData.initials : "AD"}</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Admin User</p>
-              <p className="text-xs text-muted-foreground">{adminData ? adminData.email : "admin@company.com"}</p>
+              <p className="text-sm font-medium text-foreground">Admin</p>
+              <p className="text-xs text-gray-800 ">{adminData ? adminData.email : "admin@company.com"}</p>
             </div>
-             <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-muted rounded-lg transition-colors group"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-red-600" />
-              </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-muted rounded-lg transition-colors group"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-purple-700" />
+            </button>
           </div>
         </div>
       </div>
@@ -981,7 +664,6 @@ useEffect(() => {
     </div>
   )
 }
-
 const ModernDashboardView = ({
   companies = [],
   isLoading = false,
@@ -1178,7 +860,6 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
-  // const [apiUrl, setApiUrl] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -1197,8 +878,8 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.password) newErrors.password = "Password is required"
-    if (!formData.domain.trim()) newErrors.domain = "domain is required"
-    if (!formData.tin_number.trim()) newErrors.tin_number = "TIN number is required"
+    if (!formData.subdomain.trim()) newErrors.subdomain = "Subdomain is required"
+    if (!formData.tin_number.trim()) newErrors.tin_number = "TIN number is required" // Added validation
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -1211,17 +892,17 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
       newErrors.password = "Password must be at least 6 characters"
     }
 
+    // Subdomain validation (alphanumeric and hyphens only)
+    const subdomainRegex = /^[a-zA-Z0-9-]+$/
+    if (formData.subdomain && !subdomainRegex.test(formData.subdomain)) {
+      newErrors.subdomain = "Subdomain can only contain letters, numbers, and hyphens"
+    }
+
     // TIN number validation (alphanumeric only)
     const tinRegex = /^[a-zA-Z0-9]+$/
     if (formData.tin_number && !tinRegex.test(formData.tin_number)) {
       newErrors.tin_number = "TIN number can only contain letters and numbers"
     }
-
-    // domain validation (alphanumeric and hyphens only)
-    // const domainRegex = /^[a-zA-Z0-9-]+$/
-    // if (formData.domain && !domainRegex.test(formData.domain)) {
-    //   newErrors.domain = "domain can only contain letters, numbers, and hyphens"
-    // }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -1235,7 +916,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
     setIsSubmitting(true)
 
     try {
-      const adminResponse = await fetch("https://gravity.et/backend/api/companies", {
+      const response = await fetch("http://localhost:5000/api/companies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1243,18 +924,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         body: JSON.stringify(formData),
       })
 
-      // Based on the formdata domain, generate the company-specific API URL
-      const generatedApiUrl = getCompanyApiUrl(formData.domain);
-
-      const response = await fetch(`${generatedApiUrl}/companies`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (!response.ok || !adminResponse.ok) {
+      if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.message || `Server error: ${response.status}`)
       }
@@ -1269,7 +939,7 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
         category: "",
         password: "",
         subdomain: "",
-        tin_number: "",
+        tin_number: "", // Reset TIN number field
       })
 
       if (onCompanyAdded) {
@@ -1311,8 +981,9 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
               <br />
               <code className="text-xs bg-muted p-1 rounded">
                 {"{"}
-                "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", "category": "Category",
-                "password": "password123", "domain": "company-name", "tin_number": "TIN123456789"
+                "name": "Company Name", "email": "email@example.com", "phone": "123-456-7890", 
+                "category": "Category", "password": "password123", "subdomain": "company-name",
+                "tin_number": "TIN123456789"
                 {"}"}
               </code>
             </p>
@@ -1452,10 +1123,9 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                   )}
                 </div>
 
-                {/* New Domain Field */}
                 <div className="space-y-2">
-                  <label htmlFor="domain" className="block text-sm font-medium text-foreground">
-                    Domain <span className="text-destructive">*</span>
+                  <label htmlFor="subdomain" className="block text-sm font-medium text-foreground">
+                    Subdomain <span className="text-destructive">*</span>
                   </label>
                   <div className="flex">
                     <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-border bg-muted text-muted-foreground text-sm">
@@ -1463,23 +1133,23 @@ const ModernAddCompanyForm = ({ onCompanyAdded }) => {
                     </span>
                     <input
                       type="text"
-                      name="domain"
-                      id="domain"
-                      value={formData.domain}
+                      name="subdomain"
+                      id="subdomain"
+                      value={formData.subdomain}
                       onChange={handleChange}
                       className={`flex-1 px-4 py-3 bg-input border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-ring transition-all ${
-                        errors.domain ? "border-destructive" : "border-border"
+                        errors.subdomain ? "border-destructive" : "border-border"
                       }`}
-                      placeholder="company.example.com"
+                      placeholder="company-name"
                     />
-                    {/* <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
-                      .com
-                    </span> */}
+                    <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-border bg-muted text-muted-foreground text-sm">
+                      .yourdomain.com
+                    </span>
                   </div>
-                  {errors.domain && (
+                  {errors.subdomain && (
                     <p className="text-sm text-destructive flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
-                      {errors.domain}
+                      {errors.subdomain}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">

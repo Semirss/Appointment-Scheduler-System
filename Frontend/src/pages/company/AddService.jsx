@@ -10,6 +10,8 @@ const AddService = () => {
   const [serviceError, setServiceError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Set a constant company ID
+  // const companyId = 2;
   const { company } = useCompany();
   const companyId = company?.company_id;
 
