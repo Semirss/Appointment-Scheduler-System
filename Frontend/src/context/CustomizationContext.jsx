@@ -72,12 +72,8 @@ export const CustomizationProvider = ({ children }) => {
 
   const saveCustomizationToDB = async (newCustomization) => {
     try {
-<<<<<<< HEAD
       // Prepare the data for both API calls - use the exact field names expected by backend
       const customizationData = {
-=======
-      const response = await axios.put(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/${companyId}`, {
->>>>>>> main
         bg_color: newCustomization.theme_background,
         text_color: newCustomization.theme_text,
         btn_color: newCustomization.theme_button,
@@ -92,7 +88,6 @@ export const CustomizationProvider = ({ children }) => {
         font_size_base: newCustomization.font_size_base,
         font_heading: newCustomization.font_heading,
         status: newCustomization.status
-<<<<<<< HEAD
       };
 
       let finalResponse = { success: false, message: 'Failed to save to any database' };
@@ -150,18 +145,6 @@ export const CustomizationProvider = ({ children }) => {
       // This catch block will only execute if the initial setup or data retrieval fails.
       console.error('Unexpected error:', error);
       return { success: false, message: 'An unexpected error occurred.' };
-=======
-      });
-
-      if (response.data.success) {
-        return { success: true };
-      } else {
-        return { success: false, message: response.data.message || 'Unknown error' };
-      }
-    } catch (error) {
-      console.error('Error saving customization:', error);
-      return { success: false, message: 'Failed to save to database' };
->>>>>>> main
     }
   };
 
@@ -169,7 +152,6 @@ export const CustomizationProvider = ({ children }) => {
   const lockCustomization = async () => {
     if (!companyId) return;
 
-<<<<<<< HEAD
     // Save the current state to a variable for potential rollback
     const prevCustomization = customization;
     // Optimistically update the local state
@@ -245,46 +227,6 @@ export const CustomizationProvider = ({ children }) => {
     }
   };
 
-=======
-    // Save the current state to a variable
-    const prevCustomization = customization;
-    // Optimistically update the local state
-    setCustomization(prev => ({ ...prev, status: 'locked' }));
-
-    try {
-      const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/customizations/lock`, {
-        company_id: companyId,
-      });
-
-      if (!response.data.success) {
-        console.error('Database lock failed:', response.data.message);
-        throw new Error('Database lock failed');
-      }
-    } catch (error) {
-      console.error('Error locking status:', error);
-      // Revert local state if save fails
-      setCustomization(prevCustomization);
-      throw error;
-    }
-  };
-
-  const updateCustomization = async (newCustomization) => {
-    if (!companyId) return;
-
-    // Optimistically update local state for responsive UI
-    setCustomization(newCustomization);
-
-    // Save to database
-    const result = await saveCustomizationToDB(newCustomization);
-    if (!result.success) {
-      console.error('Error updating customization:', result.message);
-      // Revert local state if database save fails
-      fetchCustomization();
-      throw new Error(result.message);
-    }
-  };
-
->>>>>>> main
   // Old updateStatus function, now just a simple router
   const updateStatus = async (newStatus) => {
     if (newStatus === 'locked') {
@@ -293,7 +235,6 @@ export const CustomizationProvider = ({ children }) => {
     // You can add an 'unlocked' case here if needed
   };
 
-<<<<<<< HEAD
   const handleLogoUpload = async (file) => {
     if (!companyId) {
       console.error("No company ID available to upload logo.");
@@ -330,8 +271,6 @@ export const CustomizationProvider = ({ children }) => {
     }
   };
 
-=======
->>>>>>> main
   useEffect(() => {
     if (companyId) {
       fetchCustomization();
@@ -344,12 +283,8 @@ export const CustomizationProvider = ({ children }) => {
       updateCustomization,
       updateStatus,
       isLoading,
-<<<<<<< HEAD
       refreshCustomization: fetchCustomization,
       handleLogoUpload
-=======
-      refreshCustomization: fetchCustomization
->>>>>>> main
     }}>
       {children}
     </CustomizationContext.Provider>

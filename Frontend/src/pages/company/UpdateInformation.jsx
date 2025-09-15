@@ -5,11 +5,7 @@ import axios from 'axios';
 import { useCompany } from '../../context/CompanyContext';
 
 const UpdateInformation = () => {
-<<<<<<< HEAD
   const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading, handleLogoUpload } = useCustomization();
-=======
-  const { customization, updateCustomization, updateStatus, refreshCustomization, isLoading: contextLoading } = useCustomization();
->>>>>>> main
   const { company } = useCompany();
   
   // Derive states directly from customization.status
@@ -27,12 +23,7 @@ const UpdateInformation = () => {
   // Load initial data
   useEffect(() => {
     setPreviewLogo(customization.logo_url);
-<<<<<<< HEAD
   }, [customization.logo_url]);
-=======
-    setPreviewBanner(customization.banner_image);
-  }, [customization.logo_url, customization.banner_image]);
->>>>>>> main
 
     // Polling effect to check for status changes
   useEffect(() => {
@@ -99,17 +90,6 @@ const UpdateInformation = () => {
     { name: 'X-Large', value: '20px' },
   ];
 
-<<<<<<< HEAD
-=======
-  // Load initial data
-  // useEffect(() => {
-  //   setPreviewLogo(customization.logo_url);
-  //   setPreviewBanner(customization.banner_image);
-  //   setIsLocked(customization.status === 'locked');
-  //   setRequestSent(customization.status === 'unlock_requested');
-  // }, [customization]);
-
->>>>>>> main
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     updateCustomization({
@@ -175,7 +155,6 @@ const UpdateInformation = () => {
     }
   };
 
-<<<<<<< HEAD
   // Helper function to convert file to base64
   const convertFileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -237,28 +216,6 @@ const UpdateInformation = () => {
 
     } catch (error) {
         setSaveError(error.response?.data?.message || 'Failed to send unlock request.');
-=======
-  const handleRequestAccess = async () => {
-    try {
-      const response = await axios.post('https://test.dynamicrealestatemarketing.com/backend/api/customizations/request-unlock', {
-        company_id: company.company_id
-      });
-
-      console.log(response.data);
-      
-      // Only update if the API call was successful
-      if (response.data.success) {
-        // Update the context to reflect the new status
-        updateCustomization({
-          ...customization,
-          status: 'unlock_requested'
-        });
-      } else {
-        throw new Error(response.data.message || 'Failed to request unlock');
-      }
-    } catch (error) {
-      setSaveError(error.response?.data?.message || 'Failed to send unlock request');
->>>>>>> main
     }
   };
 
@@ -296,11 +253,7 @@ const UpdateInformation = () => {
 
     try {
         await updateCustomization(customization);
-<<<<<<< HEAD
         await updateStatus('locked');
-=======
-        await updateStatus('locked'); 
->>>>>>> main
         
         setSaveSuccess('Changes saved successfully and customization locked!');
 
@@ -861,7 +814,6 @@ const UpdateInformation = () => {
                   Upload Logo
               </label>
               <div className="flex items-center gap-4">
-<<<<<<< HEAD
                   {previewLogo && (
                       <img 
                           src={previewLogo} 
@@ -891,73 +843,6 @@ const UpdateInformation = () => {
                   </label>
               </div>
           </div>
-=======
-                {previewLogo && (
-                  <img 
-                    src={previewLogo} 
-                    alt="Logo preview" 
-                    className="w-16 h-16 object-contain border rounded"
-                    style={{ borderColor: `${customization.theme_button}20` }}
-                  />
-                )}
-                <label 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
-                  style={{ 
-                    backgroundColor: `${customization.theme_button}10`,
-                    color: customization.theme_text
-                  }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
-                  onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
-                >
-                  <FaImage />
-                  Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'logo')}
-                    className="hidden"
-                    disabled={isLocked || requestSent}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Banner Upload */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Upload Banner
-              </label>
-              <div className="flex items-center gap-4">
-                {previewBanner && (
-                  <img 
-                    src={previewBanner} 
-                    alt="Banner preview" 
-                    className="w-32 h-16 object-cover border rounded"
-                    style={{ borderColor: `${customization.theme_button}20` }}
-                  />
-                )}
-                <label 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors"
-                  style={{ 
-                    backgroundColor: `${customization.theme_button}10`,
-                    color: customization.theme_text
-                  }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = `${customization.theme_button}20`}
-                  onMouseOut={(e) => e.target.style.backgroundColor = `${customization.theme_button}10`}
-                >
-                  <FaImage />
-                  Choose File
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'banner')}
-                    className="hidden"
-                    disabled={isLocked || requestSent}
-                  />
-                </label>
-              </div>
-            </div>
->>>>>>> main
 
             <div>
                 <label className="block text-sm font-medium mb-3">

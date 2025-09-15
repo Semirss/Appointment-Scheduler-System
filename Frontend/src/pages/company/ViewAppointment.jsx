@@ -340,7 +340,6 @@ const ViewAppointment = () => {
     address: showNewClientForm ? newAppointmentFormData.address : ''
   };
 
-<<<<<<< HEAD
   try {
     const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
     
@@ -361,24 +360,6 @@ const ViewAppointment = () => {
         const companyResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/company/${companyId}`);
         if (companyResponse.data.success && companyResponse.data.data) {
           companyDomain = companyResponse.data.data.domain;
-=======
-    try {
-        console.log("Sending payload:", payload);
-        const response = await axios.post(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/createAppointment`, payload);
-          setShowNewAppointmentModal(false);
-        // Refresh the appointments list
-        const appointmentsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/appointments/appointees/${companyId}`);
-          setAppointments(appointmentsResponse.data.data || []);
-        // Refresh clients list if a new client was created
-        if (showNewClientForm) {
-        const clientsResponse = await axios.get(`https://test.dynamicrealestatemarketing.com/backend/api/users`);
-          setAvailableClients(clientsResponse.data.data || []);
-        }
-    } catch (error) {
-        console.error('Error creating new appointment:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-        setNewAppointmentError(error.response.data.message);
->>>>>>> main
         } else {
           console.error('Company not found or failed to retrieve company data.');
         }
